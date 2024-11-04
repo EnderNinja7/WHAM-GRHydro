@@ -44,6 +44,7 @@ SRCS = 	Utils.F90 \
 	GRHydro_UpdateMask.F90 \
 	GRHydro_Set_TP_GF.c  \
 	GRHydro_Differences.F90 \
+	GRHydro_RepRimAnd.cc \
 	GRHydro_EoSChangeGamma.F90 \
 	GRHydro_Tmunu.F90 \
 	GRHydro_Con2PrimM.F90 \

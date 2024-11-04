@@ -80,6 +80,10 @@ subroutine Conservative2PrimitiveM(CCTK_ARGUMENTS)
   pointer (pg11, g11), (pg12, g12), (pg13, g13), (pg22, g22), (pg23, g23), (pg33, g33)
   pointer (pvup, vup), (pBprim, Bprim)
 
+  !Temp data holders for de-averaging
+  CCTK_REAL, DIMENSION(cctk_lsh(1), cctk_lsh(2), cctk_lsh(3)) :: temp1, temp2, temp3, temp4, temp5, temp6, temp7, temp8&
+  , temp9, temp10, dens_avg, tau_avg, scon1_avg, scon2_avg, scon3_avg
+
   logical :: posdef
 
   CCTK_REAL :: g11c, g12c, g13c, g22c, g23c, g33c
@@ -148,6 +152,33 @@ subroutine Conservative2PrimitiveM(CCTK_ARGUMENTS)
   call EOS_Omni_press(GRHydro_eos_handle,keytemp,GRHydro_eos_rf_prec,n,&
          one,one,xtemp,xye,local_gam,keyerr,anyerr)
   local_gam = local_gam+1.d0
+
+  !call de-averaging step
+  call apply(dens, nx, ny, nz, 0, temp1)
+  call apply(temp1, nx, ny, nz, 1, temp2)
+  call apply(temp2, nx, ny, nz, 2, dens_avg)
+
+  call apply(tau, nx, ny, nz, 0, temp3)
+  call apply(temp3, nx, ny, nz, 1, temp4)
+  call apply(temp4, nx, ny, nz, 2, tau_avg)
+
+  call apply(scon(:,:,:,1), nx, ny, nz, 0, temp5)
+  call apply(temp5, nx, ny, nz, 1, temp6)
+  call apply(temp6, nx, ny, nz, 2, scon1_avg)
+
+  call apply(scon(:,:,:,2), nx, ny, nz, 0, temp7)
+  call apply(temp7, nx, ny, nz, 1, temp8)
+  call apply(temp8, nx, ny, nz, 2, scon2_avg)
+
+  call apply(scon(:,:,:,3), nx, ny, nz, 0, temp9)
+  call apply(temp9, nx, ny, nz, 1, temp10)
+  call apply(temp10, nx, ny, nz, 2, scon3_avg)
+
+  !dens = dens_avg
+  !tau = tau_avg
+  !scon(:, :, :, 1) = scon1_avg
+  !scon(:, :, :, 2) = scon2_avg
+  !scon(:, :, :, 3) = scon3_avg
 
   !$OMP PARALLEL DO PRIVATE(i,j,k,itracer,&
   !$OMP uxx, uxy, uxz, uyy, uyz, uzz, epsnegative, &

@@ -13,6 +13,10 @@
 #include "SpaceMask.h"
 #include "GRHydro_Macros.h"
 
+
+#define ITER_TOL (1.0e-8)
+#define MAXITER (50)
+
  /*@@
    @routine    Conservative2Primitive
    @date       Sat Jan 26 01:08:33 2002
@@ -49,9 +53,14 @@ subroutine Conservative2Primitive(CCTK_ARGUMENTS)
   !!DECLARE_CCTK_FUNCTIONS
 
   integer :: i, j, k, itracer, nx, ny, nz
-  CCTK_REAL :: uxx, uxy, uxz, uyy, uyz, uzz, pmin, epsmin, dummy1, dummy2
+  CCTK_REAL :: uxx, uxy, uxz, uyy, uyz, uzz, sdet, pmin, epsmin, dummy1, dummy2, temp22
   logical :: epsnegative
   character*256 :: warnline
+
+  CCTK_REAL :: oob, b2, d2, s2, bscon, bxhat, byhat, bzhat, bhatscon
+  CCTK_REAL :: Wm, Wm0, Wm_resid, Wmold
+  CCTK_REAL :: s2m, s2m0, s2m_resid, s2mold, s2max, taum
+  CCTK_INT :: niter
   
   CCTK_REAL :: local_min_tracer
   CCTK_REAL :: local_perc_ptol
@@ -105,6 +114,7 @@ subroutine Conservative2Primitive(CCTK_ARGUMENTS)
 
   !Initialize de-average temps
   temp1 = 0
+  temp22 = 0
   temp2 = 0
   temp3 = 0
   temp4 = 0
@@ -125,7 +135,8 @@ subroutine Conservative2Primitive(CCTK_ARGUMENTS)
   else
     local_min_tracer = 0.0d0
   end if
-  
+
+
   !
   !call de-averaging step
   call apply(dens, nx, ny, nz, 0, temp1)
@@ -148,6 +159,9 @@ subroutine Conservative2Primitive(CCTK_ARGUMENTS)
   call apply(temp9, nx, ny, nz, 1, temp10)
   call apply(temp10, nx, ny, nz, 2, scon3_avg)
 
+  !For plotting dens and rho output
+  open (unit=10,file="out.csv",action="write")
+
   ! this is a poly call
   call EOS_Omni_press(GRHydro_polytrope_handle,keytemp,GRHydro_eos_rf_prec,n,&
          GRHydro_rho_min,xeps,xtemp,xye,pmin,keyerr,anyerr)
@@ -157,19 +171,74 @@ subroutine Conservative2Primitive(CCTK_ARGUMENTS)
   !$OMP PARALLEL DO PRIVATE(i,j,k,itracer,&
   !$OMP uxx, uxy, uxz, uyy, uyz, uzz, epsnegative, anyerr, keyerr, keytemp,&
   !$OMP warnline, dummy1, dummy2)
-  do k = 1, nz 
-    do j = 1, ny 
+  !do k = 1+GRHydro_stencil, nz-GRHydro_stencil
+  !  do j = 1+GRHydro_stencil, ny-GRHydro_stencil
+  !    do i = 1+GRHydro_stencil, nx-GRHydro_stencil
+  do k = 1, nz
+    do j = 1, ny
       do i = 1, nx
+        sdet = sdetg(i,j,k)
+        !Fix as per GRHydro_Con2PrimM.F90
+        if(sqrtdet_thr.gt.0d0 .and. sdetg(i,j,k).ge.sqrtdet_thr) then
+          d2 = dens(i,j,k)**2
+                  s2 = uxx*scon1_avg(i,j,k)**2 + uyy*scon2_avg(i,j,k)**2 &
+                                            + uzz*scon3_avg(i,j,k)**2 &
+                     + 2.0d0*uxy*scon1_avg(i,j,k)*scon2_avg(i,j,k) &
+                     + 2.0d0*uxz*scon1_avg(i,j,k)*scon3_avg(i,j,k)&
+                     + 2.0d0*uyz*scon2_avg(i,j,k)*scon3_avg(i,j,k) 
+                 oob = 1.0d0/sqrt(b2)
+               bxhat = 0.0d0
+               byhat = 0.0d0
+               bzhat = 0.0d0
+               bhatscon = bxhat*scon(i,j,k,1)+byhat*scon2_avg(i,j,k) &
+                                             +bzhat*scon3_avg(i,j,k)
+               bscon = 0.0d0
+               b2 = 0.0d0
+               ! Initial guesses for iterative procedure to find Wm:
+               Wm0 = sdet*sqrt(bhatscon**2+d2)
+               s2m0 = (Wm0**2*s2+bhatscon**2*(b2+2.0d0*Wm0)) &
+                    / (Wm0+b2)**2 
+               Wm = sdet*sqrt(s2m0+d2)
+               s2m = (Wm**2*s2+bscon**2*(b2+2.0d0*Wm)) &
+                   / (Wm+b2)**2 
+               s2m_resid = 1.0d60
+               Wm_resid = 1.0d60
+               niter = 0
+               do while((s2m_resid.ge.ITER_TOL.and.Wm_resid.ge.ITER_TOL).and.&
+                        niter.le.MAXITER)
+                 Wmold = Wm
+                 s2mold = s2m
+                 Wm = sdet*sqrt(s2m+d2)
+                 s2m = (Wm**2*s2+bscon**2*(b2+2.0d0*Wm)) &
+                     / (Wm+b2)**2 
+                 Wm_resid = abs(Wmold-Wm)
+                 s2m_resid = abs(s2mold-s2m)
+                 niter = niter + 1
+               end do
+               !TODO: abort execution if niter .eq. MAXITER and warn user
+               taum = tau_avg(i,j,k) - 0.5d0*sdet*b2 -0.5d0*(b2*s2-bscon**2)/ &
+                                                       (sdet*(Wm+b2)**2) 
+               s2max = taum*(taum+2.0d0*dens(i,j,k))
+               if(taum.lt.GRHydro_tau_min)then
+                 tau_avg(i,j,k) = GRHydro_tau_min + 0.5d0*sdet*b2 + 0.5d0* &
+                              (b2*s2-bscon**2)/(sdet*(Wm+b2)**2)
+               end if
+               if(s2.gt.s2max) then
+                 scon(i,j,k,1) = scon(i,j,k,1)*sqrt(s2max/s2)
+                 scon(i,j,k,2) = scon(i,j,k,2)*sqrt(s2max/s2)
+                 scon(i,j,k,3) = scon(i,j,k,3)*sqrt(s2max/s2)
+               end if
+        endif
 
 #if 0
-         if (dens(i,j,k).ne.dens(i,j,k)) then
+         if (dens_avg(i,j,k).ne.dens_avg(i,j,k)) then
             !$OMP CRITICAL
             call CCTK_WARN(1,"dens NAN at entry of Con2Prim")
             write(warnline,"(A10,i5)") "reflevel: ",GRHydro_reflevel
             call CCTK_WARN(1,warnline)
             write(warnline,"(3i5,1P10E15.6)") i,j,k,x(i,j,k),y(i,j,k),z(i,j,k)
             call CCTK_WARN(1,warnline)
-            write(warnline,"(1P10E15.6)") rho(i,j,k),dens(i,j,k),eps(i,j,k)
+            write(warnline,"(1P10E15.6)") rho(i,j,k),dens_avg(i,j,k),eps(i,j,k)
             call CCTK_WARN(1,warnline)
             write(warnline,'(a32,2i3)') 'hydro_excision_mask, atmosphere_mask: ', hydro_excision_mask(i,j,k), atmosphere_mask(i,j,k)
             call CCTK_WARN(1,warnline)
@@ -188,7 +257,7 @@ subroutine Conservative2Primitive(CCTK_ARGUMENTS)
             call CCTK_WARN(1,warnline)
             write(warnline,"(3i5,1P10E15.6)") i,j,k,x(i,j,k),y(i,j,k),z(i,j,k)
             call CCTK_WARN(1,warnline)
-            write(warnline,"(1P10E15.6)") rho(i,j,k),dens(i,j,k),eps(i,j,k)
+            write(warnline,"(1P10E15.6)") rho(i,j,k),dens_avg(i,j,k),eps(i,j,k)
             call CCTK_WARN(1,warnline)
             call CCTK_ERROR("Aborting!!!")
             STOP
@@ -208,7 +277,8 @@ subroutine Conservative2Primitive(CCTK_ARGUMENTS)
 
         ! In excised region, set to atmosphere!    
         if (GRHydro_enable_internal_excision /= 0 .and. (hydro_excision_mask(i,j,k) .gt. 0)) then
-           SET_ATMO_MIN(dens(i,j,k), sdetg(i,j,k)*GRHydro_rho_min, r(i,j,k)) !sqrt(det)*GRHydro_rho_min !/(1.d0+GRHydro_atmo_tolerance)
+           !SET_ATMO_MIN(dens(i,j,k), sdetg(i,j,k)*GRHydro_rho_min, r(i,j,k)) !sqrt(det)*GRHydro_rho_min !/(1.d0+GRHydro_atmo_tolerance)
+           SET_ATMO_MIN(dens_avg(i,j,k), sdetg(i,j,k)*GRHydro_rho_min, r(i,j,k))
            SET_ATMO_MIN(rho(i,j,k), GRHydro_rho_min, r(i,j,k)) !GRHydro_rho_min
            scon(i,j,k,:) = 0.d0
            vup(i,j,k,:) = 0.d0
@@ -218,7 +288,7 @@ subroutine Conservative2Primitive(CCTK_ARGUMENTS)
               ! set hot atmosphere values
               temperature(i,j,k) = grhydro_hot_atmo_temp
               y_e(i,j,k) = grhydro_hot_atmo_Y_e
-              y_e_con(i,j,k) = y_e(i,j,k) * dens(i,j,k)
+              y_e_con(i,j,k) = y_e(i,j,k) * dens_avg(i,j,k)
               keytemp = 1
               call EOS_Omni_press(GRHydro_eos_handle,keytemp,GRHydro_eos_rf_prec,n,&
                    rho(i,j,k),eps(i,j,k),temperature(i,j,k),y_e(i,j,k),&
@@ -246,7 +316,7 @@ subroutine Conservative2Primitive(CCTK_ARGUMENTS)
         if (evolve_tracer .ne. 0) then
            do itracer=1,number_of_tracers
               call Con2Prim_ptTracer(cons_tracer(i,j,k,itracer), tracer(i,j,k,itracer), &
-                   dens(i,j,k))
+                   dens_avg(i,j,k))
 
               if (use_min_tracer .ne. 0) then
                 if (tracer(i,j,k,itracer) .le. local_min_tracer) then
@@ -259,15 +329,55 @@ subroutine Conservative2Primitive(CCTK_ARGUMENTS)
         endif
         
         if(evolve_Y_e.ne.0) then
-           Y_e(i,j,k) = max(min(Y_e_con(i,j,k) / dens(i,j,k),GRHydro_Y_e_max),&
+           Y_e(i,j,k) = max(min(Y_e_con(i,j,k) / dens_avg(i,j,k),GRHydro_Y_e_max),&
                 GRHydro_Y_e_min)
         endif
 
          !if ( dens(i,j,k) .le. sqrt(det)*GRHydro_rho_min*(1.d0+GRHydro_atmo_tolerance) ) then
+         !IF_BELOW_ATMO(dens_avg(i,j,k), sdetg(i,j,k)*GRHydro_rho_min, GRHydro_atmo_tolerance, r(i,j,k)) then
+           !SET_ATMO_MIN(dens(i,j,k), sdetg(i,j,k)*GRHydro_rho_min, r(i,j,k)) !sqrt(det)*GRHydro_rho_min !/(1.d0+GRHydro_atmo_tolerance)
+         !  SET_ATMO_MIN(dens_avg(i,j,k), sdetg(i,j,k)*GRHydro_rho_min, r(i,j,k))
+         !  SET_ATMO_MIN(rho(i,j,k), GRHydro_rho_min, r(i,j,k)) !GRHydro_rho_min
+         !  scon(i,j,k,:) = 0.d0
+         !  scon1_avg(i,j,k) = 0.d0
+         !  scon2_avg(i,j,k) = 0.d0
+         !  scon3_avg(i,j,k) = 0.d0
+         !  vup(i,j,k,:) = 0.d0
+         !  w_lorentz(i,j,k) = 1.d0
+
+         !  if(evolve_temper.ne.0) then
+         !     ! set hot atmosphere values
+         !     temperature(i,j,k) = grhydro_hot_atmo_temp
+         !    y_e(i,j,k) = grhydro_hot_atmo_Y_e
+         !    y_e_con(i,j,k) = y_e(i,j,k) * dens_avg(i,j,k)
+         !     keytemp = 1
+         !     call EOS_Omni_press(GRHydro_eos_handle,keytemp,GRHydro_eos_rf_prec,n,&
+         !          rho(i,j,k),eps(i,j,k),temperature(i,j,k),y_e(i,j,k),&
+         !          press(i,j,k),keyerr,anyerr)
+         !  else
+         !    keytemp = 0
+         !     call EOS_Omni_press(GRHydro_polytrope_handle,keytemp,GRHydro_eos_rf_prec,n,&
+         !          rho(i,j,k),eps(i,j,k),xtemp,xye,press(i,j,k),keyerr,anyerr)
+
+         !     call EOS_Omni_EpsFromPress(GRHydro_polytrope_handle,keytemp,GRHydro_eos_rf_prec,n,&
+         !          rho(i,j,k),eps(i,j,k),xtemp,xye,press(i,j,k),eps(i,j,k),keyerr,anyerr)
+         !  endif
+
+         !  ! w_lorentz=1, so the expression for tau reduces to:
+         !  tau_avg(i,j,k)  = sdetg(i,j,k) * (rho(i,j,k)+rho(i,j,k)*eps(i,j,k)) - dens_avg(i,j,k)
+         !  
+         !  cycle
+
+         ! end if
+
          IF_BELOW_ATMO(dens(i,j,k), sdetg(i,j,k)*GRHydro_rho_min, GRHydro_atmo_tolerance, r(i,j,k)) then
-           SET_ATMO_MIN(dens(i,j,k), sdetg(i,j,k)*GRHydro_rho_min, r(i,j,k)) !sqrt(det)*GRHydro_rho_min !/(1.d0+GRHydro_atmo_tolerance)
+           !SET_ATMO_MIN(dens(i,j,k), sdetg(i,j,k)*GRHydro_rho_min, r(i,j,k)) !sqrt(det)*GRHydro_rho_min !/(1.d0+GRHydro_atmo_tolerance)
+           SET_ATMO_MIN(dens(i,j,k), sdetg(i,j,k)*GRHydro_rho_min, r(i,j,k))
            SET_ATMO_MIN(rho(i,j,k), GRHydro_rho_min, r(i,j,k)) !GRHydro_rho_min
            scon(i,j,k,:) = 0.d0
+           scon1_avg(i,j,k) = 0.d0
+           scon2_avg(i,j,k) = 0.d0
+           scon3_avg(i,j,k) = 0.d0
            vup(i,j,k,:) = 0.d0
            w_lorentz(i,j,k) = 1.d0
 
@@ -290,25 +400,49 @@ subroutine Conservative2Primitive(CCTK_ARGUMENTS)
            endif
 
            ! w_lorentz=1, so the expression for tau reduces to:
+           tau_avg(i,j,k)  = sdetg(i,j,k) * (rho(i,j,k)+rho(i,j,k)*eps(i,j,k)) - dens_avg(i,j,k)
            tau(i,j,k)  = sdetg(i,j,k) * (rho(i,j,k)+rho(i,j,k)*eps(i,j,k)) - dens(i,j,k)
-           
+
            cycle
 
          end if
 
          if(evolve_temper.eq.0) then
-          write (*,*) dens_avg(i, j, k), "=?=", dens(i, j, k)
-            call Con2Prim_pt(int(cctk_iteration,ik),int(i,ik),int(j,ik),int(k,ik),&
-                 GRHydro_eos_handle, dens_avg(i,j,k),scon1_avg(i,j,k),scon2_avg(i,j,k), &
-                 scon3_avg(i,j,k),tau_avg(i,j,k),rho(i,j,k),vup(i,j,k,1),vup(i,j,k,2), &
+          
+            !write (*,*) dens_avg(i, j, k), "=?=", dens(i, j, k)
+              call Con2Prim_pt(int(cctk_iteration,ik),int(i,ik),int(j,ik),int(k,ik),&
+                 GRHydro_eos_handle, dens(i,j,k),scon(i,j,k, 1),scon(i,j,k, 2), &
+                 scon(i,j,k, 3),tau(i,j,k),rho(i,j,k),vup(i,j,k,1),vup(i,j,k,2), &
                  vup(i,j,k,3),eps(i,j,k),press(i,j,k),w_lorentz(i,j,k), &
                  uxx,uxy,uxz,uyy,uyz,uzz,sdetg(i,j,k),x(i,j,k),y(i,j,k), &
                  z(i,j,k),r(i,j,k),epsnegative,GRHydro_rho_min,pmin, epsmin, & 
                  GRHydro_reflevel, GRHydro_C2P_failed(i,j,k))
-         else
+            
+                 ! RePrimand call
+                 
+                 !temp22 = dens(i,j,k)
+                 !call GRHydro_RPR_Con2Prim_pt(dens(i,j,k),scon(i,j,k, 1),scon(i,j,k, 2), &
+                 !scon(i,j,k, 3),tau(i,j,k), g11(i,j,k), g12(i,j,k), g13(i,j,k), g22(i,j,k), g23(i,j,k), g33(i,j,k), rho(i,j,k), &
+                 !eps(i,j,k),press(i,j,k), & 
+                 !vup(i,j,k,1),vup(i,j,k,2),vup(i,j,k,3),&
+                 !GRHydro_C2P_failed(i,j,k), w_lorentz(i,j,k))
+
+                 if(GRHydro_C2P_failed(i,j,k).ge.1) then
+                  write(*,*) "FAILED AT X:", X(i,j,k), " Y:", y(i,j,k), " Z:", z(i,j,k)
+                  write(10,*) "FAILED AT X:", X(i,j,k), " Y:", y(i,j,k), " Z:", z(i,j,k), " dens:", dens(i,j,k), "tau: ", tau(i,j,k), "scon: ", scon(i,j,k,1), ",", scon(i,j,k,2), ",", scon(i,j,k,3),&
+                  " g11: ", g11(i,j,k), " g12: ", g12(i,j,k), " g13: ", g13(i,j,k), " g22: ", g22(i,j,k), " g23: ", g23(i,j,k), " g33: ", g33(i,j,k)
+                endif
+                 !write(10,*) temp22, ",", dens(i,j,k)
+                 !foo
+                 
+
+
+          
+        else
             call CCTK_ERROR("Should never reach this point!")
             STOP
-         endif
+         
+        endif
 
 
         if (epsnegative) then  
@@ -416,6 +550,7 @@ subroutine Conservative2Primitive(CCTK_ARGUMENTS)
     end do
   end do
   !$OMP END PARALLEL DO
+  close(10)
 
   return
   
@@ -503,8 +638,8 @@ subroutine Con2Prim_pt(cctk_iteration,ii,jj,kk,&
       pold = sqrt(s2 + c2p_reset_pressure_to_value) - utau - udens
     else 
       !$OMP CRITICAL
-!!!!      call CCTK_WARN(GRHydro_NaN_verbose, "c2p failed and being told not to reset the pressure")
-      !call CCTK_ERROR("c2p failed and being told not to reset the pressure")
+      call CCTK_WARN(GRHydro_NaN_verbose, "c2p failed and being told not to reset the pressure")
+      call CCTK_ERROR("c2p failed and being told not to reset the pressure")
       !STOP
       GRHydro_C2P_failed = 1
       !$OMP END CRITICAL
@@ -627,6 +762,7 @@ subroutine Con2Prim_pt(cctk_iteration,ii,jj,kk,&
     ! If not, we set the C2P failed mask, and set pnew = pold (which will exit the loop).
     
     if ((tmp .le. 0.0d0) .and. GRHydro_C2P_failed .eq. 0) then
+      call CCTK_WARN(GRHydro_NaN_verbose, "c2p failed and we are not in physical range")
       GRHydro_C2P_failed = 1
       pnew = pold
     endif
@@ -1911,42 +2047,42 @@ end subroutine check_GRHydro_C2P_failed
 @routine    apply
 @date       Fri Jul 5 14:47:00 2024
 @author     Dhruv Srivastava
-@desc 
-     Applies the de-averaging step of the WHAM process, for 
+@desc
+     Applies the de-averaging step of the WHAM process, for
      improved accuracy in Con2Prim
-@enddesc 
-@calls     
-@calledby   
-@history 
+@enddesc
+@calls
+@calledby
+@history
 
-@endhistory 
+@endhistory
 
 @@*/
 
 !Apply function as in weno.c++
 subroutine apply(data, nx, ny, nz, dirn, a_center_xyz)
   implicit none
-  
+
   !Declare variables
   integer, intent(in) :: nx, ny, nz, dirn
   real*8, dimension(nx, ny, nz), intent(in) :: data
-  real*8, dimension(nx, ny, nz), intent(out) :: a_center_xyz 
+  real*8, dimension(nx, ny, nz), intent(out) :: a_center_xyz
 
   real*8, dimension(nx, ny, nz) :: temp_xyz
 
   real*8, dimension(5) :: A = 0
-  
+
 
   real*8 :: A0, A1, A2, A3, A4, beta1, beta2, beta3, wbarplus1, wbarplus2, wbarplus3, iwbarplussum, wplus1, wplus2, wplus3, weno_eps
 
   integer :: i, j, k, p, q, GRHydro_stencil
   integer, dimension(5,3) :: ijk
-  
 
-  real*8, dimension(3,6) :: beta_shu = 0
-  real*8, dimension(3,5) ::  weno_coeffs_de_avg = 0
 
-  
+  real*8, dimension(3,6) :: beta_shu
+  real*8, dimension(3,5) ::  weno_coeffs_de_avg
+
+
   !Define beta_shu (same for all in WHAM) and WENO coeffs (for de-averaging here)
   beta_shu = reshape((/4.0/3.0, 4.0/3.0, 10.0/3.0,&
                       -19.0/3.0, -13.0/3.0, -31.0/3.0,&
@@ -1954,7 +2090,7 @@ subroutine apply(data, nx, ny, nz, dirn, a_center_xyz)
                       11.0/3.0, 5.0/3.0, 11.0/3.0,&
                       -31.0/3.0, -13.0/3.0, -19.0/3.0,&
                       10.0/3.0, 4.0/3.0, 4.0/3.0/), shape(beta_shu))
-  
+
   weno_coeffs_de_avg = reshape((/ -1.0/24.0, 0.,0.,&
                                   1.0/12.0, -1.0/24.0, 0.,&
                                   23.0/24.0, 13.0/12.0, 23.0/24.0,&
@@ -1968,15 +2104,11 @@ subroutine apply(data, nx, ny, nz, dirn, a_center_xyz)
 
   i = 0
   j = 0
-  k = 0; p = 0; q = 0
+  k = 0
 
-  !Initializing all the other variables just so that they don't get optimized out
-  A0 = 0; A1 = 0; A2 = 0; A3 = 0; A4 = 0; beta1 = 0; beta2 = 0; beta3 = 0; wbarplus1 = 0; wbarplus2 = 0; 
-  wbarplus3 = 0; iwbarplussum = 0; wplus1 = 0; wplus2 = 0; wplus3 = 0
-  
-  loopz: do k = GRHydro_stencil, nz - GRHydro_stencil+1 
-      loopy: do j = GRHydro_stencil, ny - GRHydro_stencil+1 
-          loopx: do i = GRHydro_stencil, nx - GRHydro_stencil+1 
+  loopz: do k = GRHydro_stencil, nz - GRHydro_stencil+1
+      loopy: do j = GRHydro_stencil, ny - GRHydro_stencil+1
+          loopx: do i = GRHydro_stencil, nx - GRHydro_stencil+1
               !This is in place of the definition of ijk[5] in weno.C++. F90 does not have ternary operators, so I had to do this in a complicated way
               !If there's a better way to do this, please let me know
               select case (dirn)
@@ -1997,7 +2129,7 @@ subroutine apply(data, nx, ny, nz, dirn, a_center_xyz)
 
               A = reshape((/A0, A1, A2, A3, A4/), shape(A))
 
-              
+
 
               !Calculate smoothness factors
               beta1  = beta_shu(1,1)*SQR(A(1))&
@@ -2006,7 +2138,7 @@ subroutine apply(data, nx, ny, nz, dirn, a_center_xyz)
                 + beta_shu(1,4)*A(1)*A(3)&
                 + beta_shu(1,5)*A(2)*A(3)&
                 + beta_shu(1,6)*SQR(A(3))
-              
+
               beta2  = beta_shu(2,1)*SQR(A(2))&
                 + beta_shu(2,2)*A(2)*A(3)&
                 + beta_shu(2,3)*SQR(A(3))&
@@ -2019,17 +2151,17 @@ subroutine apply(data, nx, ny, nz, dirn, a_center_xyz)
                 + beta_shu(3,4)*A(3)*A(5)&
                 + beta_shu(3,5)*A(4)*A(5)&
                 + beta_shu(3,6)*SQR(A(5))
-              
+
               wbarplus1 = -9.0/80.0 / SQR(weno_eps + beta1)
               wbarplus2 = 49.0/40.0 / SQR(weno_eps + beta2)
               wbarplus3 = -9.0/80.0 / SQR(weno_eps + beta3)
-         
+
               iwbarplussum = 1.0 / (wbarplus1 + wbarplus2 + wbarplus3)
-         
+
               wplus1 = wbarplus1 * iwbarplussum
               wplus2 = wbarplus2 * iwbarplussum
               wplus3 = wbarplus3 * iwbarplussum
-              
+
 
               !Calculate the reconstruction
               temp_xyz(ijk(3, 1), ijk(3,2), ijk(3, 3)) = 0
@@ -2052,7 +2184,5 @@ subroutine apply(data, nx, ny, nz, dirn, a_center_xyz)
     real*8, intent(in)::x
     SQR = x*x
   end function SQR
-  
+
 end subroutine apply
-
-
