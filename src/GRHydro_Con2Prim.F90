@@ -139,25 +139,22 @@ subroutine Conservative2Primitive(CCTK_ARGUMENTS)
 
   !
   !call de-averaging step
-  call apply(dens, nx, ny, nz, 0, temp1)
-  call apply(temp1, nx, ny, nz, 1, temp2)
-  call apply(temp2, nx, ny, nz, 2, dens_avg)
+  !call apply(dens, nx, ny, nz, 0, temp1)
+  !call apply(temp1, nx, ny, nz, 1, temp2)
+  !call apply(temp2, nx, ny, nz, 2, dens_avg)
 
-  call apply(tau, nx, ny, nz, 0, temp3)
-  call apply(temp3, nx, ny, nz, 1, temp4)
-  call apply(temp4, nx, ny, nz, 2, tau_avg)
+  !call apply(tau, nx, ny, nz, 0, temp3)
+  !call apply(temp3, nx, ny, nz, 1, temp4)
+  !call apply(temp4, nx, ny, nz, 2, tau_avg)
 
-  call apply(scon(:,:,:,1), nx, ny, nz, 0, temp5)
-  call apply(temp5, nx, ny, nz, 1, temp6)
-  call apply(temp6, nx, ny, nz, 2, scon1_avg)
+  !call apply(scon(:,:,:,1), nx, ny, nz, 0, temp5)
+  !call apply(temp5, nx, ny, nz, 1, temp6)
+  !call apply(temp6, nx, ny, nz, 2, scon1_avg)
 
-  call apply(scon(:,:,:,2), nx, ny, nz, 0, temp7)
-  call apply(temp7, nx, ny, nz, 1, temp8)
-  call apply(temp8, nx, ny, nz, 2, scon2_avg)
-
-  call apply(scon(:,:,:,3), nx, ny, nz, 0, temp9)
-  call apply(temp9, nx, ny, nz, 1, temp10)
-  call apply(temp10, nx, ny, nz, 2, scon3_avg)
+  !call apply(scon(:,:,:,2), nx, ny, nz, 0, temp7)
+  !call apply(temp7, nx, ny, nz, 1, temp8)scon3
+  !call apply(temp9, nx, ny, nz, 1, temp10)
+  !call apply(temp10, nx, ny, nz, 2, scon3_avg)
 
   !For plotting dens and rho output
   open (unit=10,file="out.csv",action="write")
@@ -181,17 +178,17 @@ subroutine Conservative2Primitive(CCTK_ARGUMENTS)
         !Fix as per GRHydro_Con2PrimM.F90
         if(sqrtdet_thr.gt.0d0 .and. sdetg(i,j,k).ge.sqrtdet_thr) then
           d2 = dens(i,j,k)**2
-                  s2 = uxx*scon1_avg(i,j,k)**2 + uyy*scon2_avg(i,j,k)**2 &
-                                            + uzz*scon3_avg(i,j,k)**2 &
-                     + 2.0d0*uxy*scon1_avg(i,j,k)*scon2_avg(i,j,k) &
-                     + 2.0d0*uxz*scon1_avg(i,j,k)*scon3_avg(i,j,k)&
-                     + 2.0d0*uyz*scon2_avg(i,j,k)*scon3_avg(i,j,k) 
+                  s2 = uxx*scon(i,j,k,1)**2 + uyy*scon(i,j,k,2)**2 &
+                                            + uzz*scon(i,j,k,3)**2 &
+                     + 2.0d0*uxy*scon(i,j,k,1)*scon(i,j,k,2) &
+                     + 2.0d0*uxz*scon(i,j,k,1)*scon(i,j,k,3)&
+                     + 2.0d0*uyz*scon(i,j,k,2)*scon(i,j,k,3) 
                  oob = 1.0d0/sqrt(b2)
                bxhat = 0.0d0
                byhat = 0.0d0
                bzhat = 0.0d0
-               bhatscon = bxhat*scon(i,j,k,1)+byhat*scon2_avg(i,j,k) &
-                                             +bzhat*scon3_avg(i,j,k)
+               bhatscon = bxhat*scon(i,j,k,1)+byhat*scon(i,j,k,2) &
+                                             +bzhat*scon(i,j,k,3)
                bscon = 0.0d0
                b2 = 0.0d0
                ! Initial guesses for iterative procedure to find Wm:
@@ -216,11 +213,11 @@ subroutine Conservative2Primitive(CCTK_ARGUMENTS)
                  niter = niter + 1
                end do
                !TODO: abort execution if niter .eq. MAXITER and warn user
-               taum = tau_avg(i,j,k) - 0.5d0*sdet*b2 -0.5d0*(b2*s2-bscon**2)/ &
+               taum = tau(i,j,k) - 0.5d0*sdet*b2 -0.5d0*(b2*s2-bscon**2)/ &
                                                        (sdet*(Wm+b2)**2) 
                s2max = taum*(taum+2.0d0*dens(i,j,k))
                if(taum.lt.GRHydro_tau_min)then
-                 tau_avg(i,j,k) = GRHydro_tau_min + 0.5d0*sdet*b2 + 0.5d0* &
+                 tau(i,j,k) = GRHydro_tau_min + 0.5d0*sdet*b2 + 0.5d0* &
                               (b2*s2-bscon**2)/(sdet*(Wm+b2)**2)
                end if
                if(s2.gt.s2max) then
@@ -231,14 +228,14 @@ subroutine Conservative2Primitive(CCTK_ARGUMENTS)
         endif
 
 #if 0
-         if (dens_avg(i,j,k).ne.dens_avg(i,j,k)) then
+         if (dens(i,j,k).ne.dens(i,j,k)) then
             !$OMP CRITICAL
             call CCTK_WARN(1,"dens NAN at entry of Con2Prim")
             write(warnline,"(A10,i5)") "reflevel: ",GRHydro_reflevel
             call CCTK_WARN(1,warnline)
             write(warnline,"(3i5,1P10E15.6)") i,j,k,x(i,j,k),y(i,j,k),z(i,j,k)
             call CCTK_WARN(1,warnline)
-            write(warnline,"(1P10E15.6)") rho(i,j,k),dens_avg(i,j,k),eps(i,j,k)
+            write(warnline,"(1P10E15.6)") rho(i,j,k),dens(i,j,k),eps(i,j,k)
             call CCTK_WARN(1,warnline)
             write(warnline,'(a32,2i3)') 'hydro_excision_mask, atmosphere_mask: ', hydro_excision_mask(i,j,k), atmosphere_mask(i,j,k)
             call CCTK_WARN(1,warnline)
@@ -257,7 +254,7 @@ subroutine Conservative2Primitive(CCTK_ARGUMENTS)
             call CCTK_WARN(1,warnline)
             write(warnline,"(3i5,1P10E15.6)") i,j,k,x(i,j,k),y(i,j,k),z(i,j,k)
             call CCTK_WARN(1,warnline)
-            write(warnline,"(1P10E15.6)") rho(i,j,k),dens_avg(i,j,k),eps(i,j,k)
+            write(warnline,"(1P10E15.6)") rho(i,j,k),dens(i,j,k),eps(i,j,k)
             call CCTK_WARN(1,warnline)
             call CCTK_ERROR("Aborting!!!")
             STOP
@@ -278,7 +275,7 @@ subroutine Conservative2Primitive(CCTK_ARGUMENTS)
         ! In excised region, set to atmosphere!    
         if (GRHydro_enable_internal_excision /= 0 .and. (hydro_excision_mask(i,j,k) .gt. 0)) then
            !SET_ATMO_MIN(dens(i,j,k), sdetg(i,j,k)*GRHydro_rho_min, r(i,j,k)) !sqrt(det)*GRHydro_rho_min !/(1.d0+GRHydro_atmo_tolerance)
-           SET_ATMO_MIN(dens_avg(i,j,k), sdetg(i,j,k)*GRHydro_rho_min, r(i,j,k))
+           SET_ATMO_MIN(dens(i,j,k), sdetg(i,j,k)*GRHydro_rho_min, r(i,j,k))
            SET_ATMO_MIN(rho(i,j,k), GRHydro_rho_min, r(i,j,k)) !GRHydro_rho_min
            scon(i,j,k,:) = 0.d0
            vup(i,j,k,:) = 0.d0
@@ -288,7 +285,7 @@ subroutine Conservative2Primitive(CCTK_ARGUMENTS)
               ! set hot atmosphere values
               temperature(i,j,k) = grhydro_hot_atmo_temp
               y_e(i,j,k) = grhydro_hot_atmo_Y_e
-              y_e_con(i,j,k) = y_e(i,j,k) * dens_avg(i,j,k)
+              y_e_con(i,j,k) = y_e(i,j,k) * dens(i,j,k)
               keytemp = 1
               call EOS_Omni_press(GRHydro_eos_handle,keytemp,GRHydro_eos_rf_prec,n,&
                    rho(i,j,k),eps(i,j,k),temperature(i,j,k),y_e(i,j,k),&
@@ -316,7 +313,7 @@ subroutine Conservative2Primitive(CCTK_ARGUMENTS)
         if (evolve_tracer .ne. 0) then
            do itracer=1,number_of_tracers
               call Con2Prim_ptTracer(cons_tracer(i,j,k,itracer), tracer(i,j,k,itracer), &
-                   dens_avg(i,j,k))
+                   dens(i,j,k))
 
               if (use_min_tracer .ne. 0) then
                 if (tracer(i,j,k,itracer) .le. local_min_tracer) then
@@ -329,7 +326,7 @@ subroutine Conservative2Primitive(CCTK_ARGUMENTS)
         endif
         
         if(evolve_Y_e.ne.0) then
-           Y_e(i,j,k) = max(min(Y_e_con(i,j,k) / dens_avg(i,j,k),GRHydro_Y_e_max),&
+           Y_e(i,j,k) = max(min(Y_e_con(i,j,k) / dens(i,j,k),GRHydro_Y_e_max),&
                 GRHydro_Y_e_min)
         endif
 
@@ -400,7 +397,7 @@ subroutine Conservative2Primitive(CCTK_ARGUMENTS)
            endif
 
            ! w_lorentz=1, so the expression for tau reduces to:
-           tau_avg(i,j,k)  = sdetg(i,j,k) * (rho(i,j,k)+rho(i,j,k)*eps(i,j,k)) - dens_avg(i,j,k)
+           !tau_avg(i,j,k)  = sdetg(i,j,k) * (rho(i,j,k)+rho(i,j,k)*eps(i,j,k)) - dens_avg(i,j,k)
            tau(i,j,k)  = sdetg(i,j,k) * (rho(i,j,k)+rho(i,j,k)*eps(i,j,k)) - dens(i,j,k)
 
            cycle
@@ -410,22 +407,22 @@ subroutine Conservative2Primitive(CCTK_ARGUMENTS)
          if(evolve_temper.eq.0) then
           
             !write (*,*) dens_avg(i, j, k), "=?=", dens(i, j, k)
-              call Con2Prim_pt(int(cctk_iteration,ik),int(i,ik),int(j,ik),int(k,ik),&
-                 GRHydro_eos_handle, dens(i,j,k),scon(i,j,k, 1),scon(i,j,k, 2), &
-                 scon(i,j,k, 3),tau(i,j,k),rho(i,j,k),vup(i,j,k,1),vup(i,j,k,2), &
-                 vup(i,j,k,3),eps(i,j,k),press(i,j,k),w_lorentz(i,j,k), &
-                 uxx,uxy,uxz,uyy,uyz,uzz,sdetg(i,j,k),x(i,j,k),y(i,j,k), &
-                 z(i,j,k),r(i,j,k),epsnegative,GRHydro_rho_min,pmin, epsmin, & 
-                 GRHydro_reflevel, GRHydro_C2P_failed(i,j,k))
+              !call Con2Prim_pt(int(cctk_iteration,ik),int(i,ik),int(j,ik),int(k,ik),&
+                 !GRHydro_eos_handle, dens(i,j,k),scon(i,j,k, 1),scon(i,j,k, 2), &
+                 !scon(i,j,k, 3),tau(i,j,k),rho(i,j,k),vup(i,j,k,1),vup(i,j,k,2), &
+                 !vup(i,j,k,3),eps(i,j,k),press(i,j,k),w_lorentz(i,j,k), &
+                 !uxx,uxy,uxz,uyy,uyz,uzz,sdetg(i,j,k),x(i,j,k),y(i,j,k), &
+                 !z(i,j,k),r(i,j,k),epsnegative,GRHydro_rho_min,pmin, epsmin, & 
+                 !GRHydro_reflevel, GRHydro_C2P_failed(i,j,k))
             
                  ! RePrimand call
                  
                  !temp22 = dens(i,j,k)
-                 !call GRHydro_RPR_Con2Prim_pt(dens(i,j,k),scon(i,j,k, 1),scon(i,j,k, 2), &
-                 !scon(i,j,k, 3),tau(i,j,k), g11(i,j,k), g12(i,j,k), g13(i,j,k), g22(i,j,k), g23(i,j,k), g33(i,j,k), rho(i,j,k), &
-                 !eps(i,j,k),press(i,j,k), & 
-                 !vup(i,j,k,1),vup(i,j,k,2),vup(i,j,k,3),&
-                 !GRHydro_C2P_failed(i,j,k), w_lorentz(i,j,k))
+                 call GRHydro_RPR_Con2Prim_pt(dens(i,j,k),scon(i,j,k, 1),scon(i,j,k, 2), &
+                 scon(i,j,k, 3),tau(i,j,k), g11(i,j,k), g12(i,j,k), g13(i,j,k), g22(i,j,k), g23(i,j,k), g33(i,j,k), rho(i,j,k), &
+                 eps(i,j,k),press(i,j,k), & 
+                 vup(i,j,k,1),vup(i,j,k,2),vup(i,j,k,3),&
+                 GRHydro_C2P_failed(i,j,k), w_lorentz(i,j,k))
 
                  if(GRHydro_C2P_failed(i,j,k).ge.1) then
                   write(*,*) "FAILED AT X:", X(i,j,k), " Y:", y(i,j,k), " Z:", z(i,j,k)

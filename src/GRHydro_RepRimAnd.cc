@@ -42,6 +42,7 @@ void CCTK_FCALL CCTK_FNAME(GRHydro_RPR_Con2Prim_pt)(
 
   //Set up atmosphere
   real_t atmo_rho = rho_abs_min; // the parameter, GRHydro_rho_min is a grid scalar nad harder to access
+  //real_t atmo_rho = 1e-6; 
   real_t atmo_eps = 0.1;
   real_t atmo_ye = 0.5;
   real_t atmo_cut = atmo_rho * (1.+GRHydro_atmo_tolerance);
