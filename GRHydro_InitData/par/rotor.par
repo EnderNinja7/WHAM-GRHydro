@@ -1,0 +1,115 @@
+##
+ActiveThorns = "time MoL cartgrid3d carpetioascii ioutil boundary  hydrobase grhydro grhydro_initdata nanchecker eos_omni CoordBase  LoopControl CarpetLib Carpet CarpetReduce spacemask ADMCoupling ADMMacros ADMBASE STATICCONFORMAL TMUNUBASE SymBase localreduce CarpetIOBasic initbase "
+ActiveThorns = "CarpetIOHDF5"
+
+driver::ghost_size=2       # for TVD
+grhydro::grhydro_stencil=2
+
+Time::dtfac = 0.25         # 0.5 see p 409 (0.25 from David Neilsen, Eric WHirschmann, and R Steven Millward arXiv:gr-qc/0512147v1)
+
+# rk2 dies quite quickly
+methodoflines::ODE_Method = "rk3"
+methodoflines::MoL_Intermediate_Steps=3
+#methodoflines::MoL_Num_Scratch_Levels=1
+
+ADMBase::initial_shift = "zero"
+
+HydroBase::initial_hydro="rotor"
+
+HydroBase::timelevels=2
+HydroBase::evolution_method="grhydro"
+HydroBase::Bvec_evolution_method="grhydro"
+
+# rotor problem from DelZanna
+# needs to be before EOS_Omni
+grhydro_initdata::rotor_use_smoothing = no
+
+SpaceMask::use_mask="yes"
+EOS_Omni::gl_gamma=5./3. # relativistic rotor problem of DelZanna & Buccianti & Londrille AaA_400_397_2003
+# try to mimic the core fluid
+EOS_Omni::poly_k = "grhydro_initdata::rotor_pressin/grhydro_initdata::rotor_rhoin**EOS_Omni::gl_gamma"
+EOS_Omni::poly_gamma="EOS_Omni::gl_gamma"
+grhydro::recon_method="tvd"
+grhydro::riemann_solver="HLLE"
+grhydro::tvd_limiter="vanleerMC"
+grhydro::bound="flat"
+grhydro::grhydro_eos_type = "General"
+grhydro::grhydro_eos_table="Ideal_Fluid"
+grhydro::Grhydro_MaxNumConstrainedVars=13
+grhydro::GRHydro_MaxNumEvolvedVars=10
+grhydro::GRHydro_MaxNumSandRVars=0 # ADMBase is not evolved
+grhydro::rho_abs_min = 1e-14 # need some reasonable value here, even though no density ever gets this low. This is about the same as GRHydro's default value from rho_central and rho_rel_min
+
+grhydro::clean_divergence = "yes"
+grhydro::transport_constraints = "no"
+grhydro::decouple_normal_Bfield = "yes"
+grhydro::kap_dc = 5.0
+grhydro::track_divB = "yes"
+
+grid::type = "coordbase"
+grid::domain = "full"
+
+CoordBase::domainsize = "minmax"
+CoordBase::xmin = 0.
+CoordBase::ymin = 0.
+CoordBase::zmin = -0.0125
+CoordBase::xmax = 1.0
+CoordBase::ymax = 1.0
+CoordBase::zmax = 0.0125
+
+CoordBase::boundary_size_x_lower = carpet::ghost_size
+CoordBase::boundary_size_y_lower = carpet::ghost_size
+CoordBase::boundary_size_z_lower = carpet::ghost_size
+CoordBase::boundary_size_x_upper = carpet::ghost_size
+CoordBase::boundary_size_y_upper = carpet::ghost_size
+CoordBase::boundary_size_z_upper = carpet::ghost_size
+
+CoordBase::spacing = "numcells"
+CoordBase::ncells_x = 400
+CoordBase::ncells_y = 400
+CoordBase::ncells_z = 10
+
+carpet::domain_from_coordbase = "yes"
+
+Cactus::terminate       = "time"
+Cactus::cctk_final_time = 0.4 # see DelZanna p 410
+
+IO::out_dir = $parfile
+CarpetIOBasic::outInfo_vars="
+  hydrobase::rho
+  hydrobase::press
+  hydrobase::eps
+  hydrobase::vel[0] hydrobase::vel[1]
+  hydrobase::w_lorentz
+  GRHydro::bcons[0] GRHydro::bcons[1]
+  GRHydro::divB GRHydro::psidc
+"
+CarpetIOBasic::outInfo_every=1
+CarpetIOASCII::out1D_every = 10
+CarpetIOASCII::out1D_z    = "no"
+CarpetIOASCII::out1D_d    = "no"
+CarpetIOASCII::out1D_xline_y = 0.5
+CarpetIOASCII::out1D_yline_x = 0.5
+CarpetIOASCII::out1D_vars = "HydroBase::rho HydroBase::press HydroBase::eps  HydroBase::vel grhydro::dens grhydro::tau grhydro::scon HydroBase::Bvec grhydro::Bcons grhydro::divB grhydro::psidc"
+
+CarpetIOHDF5::one_file_per_group             = "yes"
+CarpetIOHDF5::open_one_input_file_at_a_time  = "yes"
+CarpetIOHDF5::out2D_every                    = 1
+CarpetIOHDF5::out2D_xy                       = "yes"
+CarpetIOHDF5::out2D_xz                       = "no"
+CarpetIOHDF5::out2D_yz                       = "no"
+CarpetIOHDF5::out2D_xyplane_z                = 0.0
+CarpetIOHDF5::out2D_vars      = "
+  GRHydro::Bcons
+  GrHydro::dens 
+  GrHydro::divB
+  GRHydro::scon 
+  GRHydro::tau 
+  HydroBase::Bvec 
+  HydroBase::eps
+  HydroBase::press
+  HydroBase::rho
+  HydroBase::vel
+  HydroBase::w_lorentz
+  GRHydro::psidc
+"

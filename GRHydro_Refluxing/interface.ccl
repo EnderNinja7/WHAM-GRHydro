@@ -1,0 +1,20 @@
+# Interface definition for thorn GRHydro_Refluxing
+IMPLEMENTS: GRHydro_Refluxing
+INHERITS: GRHydro, Refluxing
+
+# Register variables to be refluxed, returns
+CCTK_INT FUNCTION                     \
+    RefluxingRegisterVariable         \
+        (CCTK_INT IN VariableIndex,   \
+         CCTK_INT IN UseSlowSector,   \
+         CCTK_INT OUT FluxIndex)
+REQUIRES FUNCTION RefluxingRegisterVariable
+
+CCTK_INT indices TYPE=scalar
+{
+  index_dens
+  index_sx index_sy index_sz
+  index_tau
+  index_ye
+  index_Bconsx index_Bconsy index_Bconsz
+} "Indices for GRHydro variables; use e.g. as flux[3*index_dens+1] for y-flux for denxity"

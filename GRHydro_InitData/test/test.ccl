@@ -1,0 +1,9 @@
+TEST magtov_poloidal
+{
+        NPROCS 1
+}
+
+TEST magtov_poloidal_poloidal_P_p_2
+{
+        NPROCS 1
+}

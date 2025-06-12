@@ -1,0 +1,31 @@
+# Main make.code.defn file for thorn Hydra_Init_Data
+# $Header: /GRHydro/GRHydro_Dev/GRHydro_Init_Data/src/make.code.defn,v 1.6 2004/04/28 17:30:18 hawke Exp $
+
+# Source files in this directory
+SRCS = 	GRHydro_C2P2C.F90 \
+	GRHydro_C2P2CM.F90 \
+	GRHydro_Con2Prim.F90 \
+	GRHydro_ReconstructTest.F90 \
+	GRHydro_ShockTube.F90 \
+	GRHydro_ShockTubeM.F90 \
+	GRHydro_Only_Atmo.F90 \
+	GRHydro_ReadConformalData.F90 \
+	GRHydro_SimpleWave.F90 \
+   CheckParam.c\
+   GRHydro_P2C2P.F90 \
+   GRHydro_P2C2PM.F90 \
+   GRHydro_P2C2PM_polytype.F90 \
+   GRHydro_MonopoleM.F90 \
+   GRHydro_CylindricalExplosionM.F90 \
+   GRHydro_RotorM.F90 \
+   GRHydro_AdvectedLoopM.F90 \
+   GRHydro_AlfvenWaveM.F90 \
+   GRHydro_Bondi.c \
+   GRHydro_BondiM.c \
+   GRHydro_PoloidalMagFieldM.F90 \
+   GRHydro_Bondi_new.F90 \
+   GRHydro_BondiM_new.F90 
+
+# Subdirectories containing source files
+SUBDIRS = 
+

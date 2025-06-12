@@ -1,0 +1,193 @@
+## mclachlan tov_static
+ActiveThorns = "Time MoL"
+ActiveThorns = "Coordbase CartGrid3d Boundary StaticConformal"
+ActiveThorns = "SymBase ADMBase TmunuBase HydroBase InitBase ADMMacros"
+ActiveThorns = "IOUtil"
+ActiveThorns = "SpaceMask CoordGauge Constants LocalReduce aeilocalinterp LoopControl"
+ActiveThorns = "Carpet CarpetLib CarpetReduce CarpetRegrid2 CarpetInterp"
+ActiveThorns = "CarpetIOASCII CarpetIOScalar CarpetIOHDF5 CarpetIOBasic"
+
+# grid parameters
+CartGrid3D::type         = "coordbase"
+CartGrid3D::domain       = "full"
+CartGrid3D::avoid_origin = "no"
+CoordBase::domainsize = "minmax"
+CoordBase::xmin =   0.0
+CoordBase::ymin =   0.0
+CoordBase::zmin =   0.0
+CoordBase::xmax =  30.0
+CoordBase::ymax =  30.0
+CoordBase::zmax =  30.0
+CoordBase::dx   =   1
+CoordBase::dy   =   1
+CoordBase::dz   =   1 
+
+CoordBase::boundary_size_x_lower        = 3
+CoordBase::boundary_size_y_lower        = 3
+CoordBase::boundary_size_z_lower        = 3
+CoordBase::boundary_size_x_upper        = 3
+CoordBase::boundary_size_y_upper        = 3
+CoordBase::boundary_size_z_upper        = 3
+CoordBase::boundary_shiftout_x_lower    = 1
+CoordBase::boundary_shiftout_y_lower    = 1
+CoordBase::boundary_shiftout_z_lower    = 1
+CoordBase::boundary_shiftout_x_upper    = 0
+CoordBase::boundary_shiftout_y_upper    = 0
+CoordBase::boundary_shiftout_z_upper    = 0
+
+ActiveThorns = "Slab ReflectionSymmetry"
+ActiveThorns = "RotatingSymmetry90"
+
+CarpetRegrid2::ensure_proper_nesting = yes
+CarpetRegrid2::symmetry_rotating90 = "yes"
+
+ReflectionSymmetry::reflection_x = "no"
+ReflectionSymmetry::reflection_y = "no"
+ReflectionSymmetry::reflection_z = "yes"
+ReflectionSymmetry::avoid_origin_x = "no"
+ReflectionSymmetry::avoid_origin_y = "no"
+ReflectionSymmetry::avoid_origin_z = "no"
+
+TmunuBase::stress_energy_storage = yes
+TmunuBase::stress_energy_at_RHS  = yes
+TmunuBase::timelevels            =  1
+TmunuBase::prolongation_type     = none
+
+HydroBase::timelevels            = 3
+
+ADMMacros::spatial_order = 4
+GRHydro::sources_spatial_order = 4
+
+ADMBase::metric_type     = "physical"
+
+SpaceMask::use_mask      = "yes"
+
+Cactus::terminate           = "time"
+Cactus::cctk_final_time     = 0
+
+Carpet::domain_from_coordbase = "yes"
+Carpet::enable_all_storage       = no
+Carpet::use_buffer_zones         = "yes"
+Carpet::use_overlap_zones 	 = "yes"
+
+Carpet::poison_new_timelevels    = "yes"
+Carpet::check_for_poison         = "no"
+
+Carpet::init_3_timelevels        = no
+Carpet::init_fill_timelevels     = "yes"
+
+CarpetLib::poison_new_memory = "yes"
+CarpetLib::poison_value      = 114
+
+# system specific Carpet paramters
+Carpet::max_refinement_levels    = 10
+driver::ghost_size               = 3
+Carpet::prolongation_order_space = 5 
+Carpet::prolongation_order_time  = 2
+
+CarpetRegrid2::regrid_every = 0
+CarpetRegrid2::num_centres  = 1
+
+CarpetRegrid2::num_levels_1 = 2
+CarpetRegrid2::radius_1[1]  = 15.0
+
+
+time::dtfac = 0.25
+MoL::ODE_Method             = "rk4"
+MoL::MoL_Intermediate_Steps = 4
+MoL::MoL_Num_Scratch_Levels = 1
+
+# Hydro paramters
+ActiveThorns = "EOS_Omni"
+ActiveThorns = "GRHydro GRHydro_InitData"
+
+HydroBase::evolution_method      = "GRHydro"
+HydroBase::Bvec_evolution_method = "GRHydro"
+
+GRHydro::recon_method              = "ppm"
+GRHydro::recon_vars                = "primitive"
+GRHydro::GRHydro_stencil            = 3
+GRHydro::bound                     = "flat"
+GRHydro::rho_abs_min               = 1.e-10
+
+GRHydro::GRHydro_eos_type          = "General"
+GRHydro::GRHydro_eos_table         = "Ideal_Fluid"
+
+GRHydro::Grhydro_MaxNumConstrainedVars = 33 
+GRHydro::GRHydro_MaxNumEvolvedVars     = 10
+
+GRHydro::transport_constraints     = "yes"
+GRHydro::track_divB                = "yes"
+GRHydro::calculate_bcom            = "yes"
+
+GRHydro::c2p_reset_pressure        = "yes"
+
+grhydro::grhydro_c2p_warnlevel         =  0
+grhydro::grhydro_c2p_warn_from_reflevel      =  2
+grhydro::con2prim_oct_hack                      =       yes
+
+ActiveThorns = "GenericFD NewRad"
+
+# init parameters
+InitBase::initial_data_setup_method = "init_some_levels"
+
+ActiveThorns = "TOVSolver"
+
+ADMBase::initial_data            = "tov"
+ADMBase::initial_lapse           = "tov"
+ADMBase::initial_shift           = "tov"
+ADMBase::initial_dtlapse         = "zero"
+ADMBase::initial_dtshift         = "zero"
+
+ADMBase::lapse_timelevels  = 3
+ADMBase::shift_timelevels  = 3
+ADMBase::metric_timelevels = 3
+
+TOVSolver::TOV_Rho_Central[0] = 1.28e-3
+TOVSolver::TOV_Gamma          = 2.0
+TOVSolver::TOV_K              = 100
+
+HydroBase::initial_hydro      = "tov"
+HydroBase::initial_Bvec       = "poloidalmagfield"
+
+GRHydro_InitData::poloidal_A_b      =  1.0
+GRHydro_InitData::poloidal_n_p      = 0 
+GRHydro_InitData::poloidal_P_cut    = 1.0e-6
+GRHydro_InitData::poloidal_rho_max  = 1.221209344680609e-03
+
+EOS_Omni::poly_K     = 1.019575500488281e+02
+EOS_Omni::poly_gamma = 2.0
+EOS_Omni::gl_K       = 1.019575500488281e+02
+EOS_Omni::gl_gamma   = 2.0
+GRHydro::initial_Gamma = 2.0
+
+# I/O
+
+IO::out_dir             = $parfile
+IO::out_fileinfo = "none"
+IO::out_group_separator = "-"
+
+IOBasic::outInfo_every = 16
+IOBasic::outInfo_vars  = "Carpet::physical_time_per_hour HydroBase::rho HydroBase::bvec GRHydro::divb"
+
+IOASCII::out1D_every        = 128 
+IOASCII::one_file_per_group = yes
+IOASCII::output_symmetry_points = no
+IOASCII::out3D_ghosts           = no
+IOASCII::out3D_outer_ghosts     = no
+IOASCII::out1D_vars         = "
+ HydroBase::rho
+ HydroBase::press
+ HydroBase::eps
+ HydroBase::vel
+ HydroBase::Bvec
+ ADMBase::lapse
+ ADMBase::metric
+ ADMBase::curv
+ GRHydro::divb
+ GRHydro::bcons
+ GRHydro::bcom
+ GRHydro::bcom0
+ GRHydro::bcom_sq
+"
+

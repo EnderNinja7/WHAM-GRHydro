@@ -1,0 +1,49 @@
+# Interface definition for thorn LegoExcision
+# $Header$
+
+implements: legoexcision
+
+inherits: spacemask, grid
+
+INCLUDES HEADER: maskvalues.h IN maskvalues.h
+
+SUBROUTINE ExcisionFindBoundary(CCTK_INT OUT ierr, \
+                                CCTK_REAL INOUT ARRAY mask, \
+				CCTK_INT IN ni, \
+				CCTK_INT IN nj, \
+				CCTK_INT IN nk)
+PROVIDES FUNCTION ExcisionFindBoundary WITH excision_findboundary \
+                  LANGUAGE Fortran
+
+SUBROUTINE ExcisionExtrapolate(CCTK_INT OUT ierr, \
+                               CCTK_REAL INOUT ARRAY var, \
+                               CCTK_REAL IN ARRAY oldvar, \
+                               CCTK_REAL IN ARRAY mask, \
+                               CCTK_REAL IN ARRAY dirx, \
+                               CCTK_REAL IN ARRAY diry, \
+                               CCTK_REAL IN ARRAY dirz, \
+			       CCTK_INT IN ni, \
+			       CCTK_INT IN nj, \
+			       CCTK_INT IN nk, \
+                               CCTK_REAL IN var0)
+PROVIDES FUNCTION ExcisionExtrapolate WITH excision_extrapolate \
+                  LANGUAGE Fortran
+
+SUBROUTINE ExcisionFindNormals(CCTK_INT OUT ierr, \
+                               CCTK_REAL IN ARRAY mask, \
+                               CCTK_REAL IN ARRAY dirx, \
+                               CCTK_REAL IN ARRAY diry, \
+                               CCTK_REAL IN ARRAY dirz, \
+			       CCTK_INT IN ni, \
+			       CCTK_INT IN nj, \
+			       CCTK_INT IN nk)
+PROVIDES FUNCTION ExcisionFindNormals WITH excision_findnormals \
+                  LANGUAGE Fortran
+
+
+
+CCTK_INT FUNCTION Boundary_SelectGroupForBC(CCTK_POINTER_TO_CONST IN GH, \
+  CCTK_INT IN faces, CCTK_INT IN boundary_width, CCTK_INT IN table_handle, \
+  CCTK_STRING IN group_name, CCTK_STRING IN bc_name)
+
+USES FUNCTION Boundary_SelectGroupForBC

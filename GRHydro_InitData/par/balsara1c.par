@@ -1,0 +1,78 @@
+ActiveThorns = "time MoL cartgrid3d carpetioascii ioutil Fortran boundary  hydrobase grhydro grhydro_initdata nanchecker eos_omni CoordBase  LoopControl CarpetLib Carpet CarpetIOHDF5 CarpetReduce spacemask ADMCoupling ADMMacros ADMBASE STATICCONFORMAL TMUNUBASE SymBase localreduce CarpetIOBasic initbase GRHydro_InitData"
+
+#This is a hack. ghost_size should be the same as grhydro::grhydro_stencil.
+
+driver::ghost_size=3
+grhydro::grhydro_stencil=3
+
+#time::dtfac = 0.25
+#time::dtfac = 0.8
+time::dtfac = 0.2
+
+methodoflines::ODE_Method = "rk2"
+methodoflines::MoL_Intermediate_Steps=2
+
+#admbase::initial_data="prim2con2prim_test"
+#GRHydro_InitData::Bx_init=0.1
+#GRHydro_InitData::By_init=0.12
+#GRHydro_InitData::Bz_init=0.14
+HydroBase::initial_hydro="shocktube"
+GRHydro_InitData::shocktube_type="diagshock"
+GRHydro_InitData::shock_case="Balsara1"
+
+HydroBase::timelevels=2
+HydroBase::evolution_method="grhydro"
+HydroBase::Bvec_evolution_method="grhydro"
+
+SpaceMask::use_mask="yes"
+EOS_Omni::gl_gamma=2.0
+grhydro::track_divB="yes"
+grhydro::clean_divergence="yes"
+grhydro::ch_dc=1.0
+grhydro::cp_dc=1.0
+grhydro::method_type="RSA FV"
+grhydro::recon_method="tvd"
+grhydro::tvd_limiter="vanleerMC"
+grhydro::recon_vars="primitive"
+grhydro::riemann_solver="HLLE"
+#grhydro::bound="flat"
+grhydro::bound="none"
+grhydro::grhydro_eos_type = "General"
+grhydro::grhydro_eos_table="Ideal_Fluid"
+grhydro::Grhydro_MaxNumConstrainedVars=13
+grhydro::GRHydro_MaxNumEvolvedVars=10
+
+grid::type = "BySpacing"
+grid::domain = "full"
+#grid::dxyz = 0.01
+#grid::dxyz = 0.000625
+grid::dxyz = 0.0000625
+
+driver::global_nx = 50
+driver::global_ny = 50
+driver::global_nz = 50
+
+Cactus::terminate="time"
+Cactus::cctk_final_time = 0.4
+#cactus::cctk_itlast = 40
+#cactus::cctk_itlast = 200
+#cactus::cctk_itlast = 2
+
+IO::out_dir = $parfile
+#IOBasic::outInfo_every = 1
+#IOBasic::outInfo_vars = "HydroBase::rho"
+CarpetIOBasic::outInfo_vars="hydrobase::rho"
+CarpetIOBasic::outInfo_every=1
+CarpetIOASCII::out1D_criterion = "time"
+CarpetIOASCII::out1D_dt = 0.01
+CarpetIOASCII::out1D_d=no
+#CarpetIOASCII::out1D_vars = "HydroBase::rho HydroBase::press HydroBase::eps  HydroBase::vel  grhydro::dens grhydro::tau grhydro::scon HydroBase::Bvec"
+CarpetIOASCII::out1D_vars = "HydroBase::rho HydroBase::press HydroBase::eps  HydroBase::vel grhydro::psidc grhydro::dens grhydro::tau grhydro::scon HydroBase::Bvec"
+#CarpetIOASCII::out1D_vars = "HydroBase::rho HydroBase::press HydroBase::eps  HydroBase::vel  grhydro::dens grhydro::tau grhydro::scon "
+
+CarpetIOHDF5::out_every = 1
+#CarpetIOHDF5::out_vars  = "HydroBase::rho HydroBase::press HydroBase::eps  HydroBase::vel HydroBase::w_lorentz  grhydro::dens grhydro::tau grhydro::scon HydroBase::Bvec"
+CarpetIOHDF5::out_vars  = "HydroBase::rho HydroBase::press HydroBase::eps  HydroBase::vel HydroBase::w_lorentz grhydro::psidc grhydro::dens grhydro::divB grhydro::tau grhydro::scon HydroBase::Bvec"
+#CarpetIOHDF5::out_vars  = "HydroBase::rho HydroBase::press HydroBase::eps  HydroBase::vel HydroBase::w_lorentz  grhydro::dens grhydro::tau grhydro::scon "
+
+

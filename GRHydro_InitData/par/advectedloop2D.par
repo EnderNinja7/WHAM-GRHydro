@@ -1,0 +1,396 @@
+#==============================================================================
+# Advected magnetic field loop (2d version): GRHydro_InitData
+#==============================================================================
+
+#------------------------------------------------------------------------------
+# Cactus parameters:
+#------------------------------------------------------------------------------
+Cactus::cctk_run_title = "Advected magnetic field loop (2d version)"
+Cactus::cctk_full_warnings         = "yes"
+
+#Cactus::terminate		= "never"
+Cactus::terminate       = "time"
+Cactus::cctk_final_time = 50.0
+#Cactus::terminate = "iteration"
+#Cactus::cctk_itlast        =  0
+#Cactus::cctk_itlast        =  256
+#Cactus::terminate="runtime"
+#Cactus::max_runtime=28800  #  46 days
+#Cactus::max_runtime=1410  #  23.5 hours
+#Cactus::max_runtime=1380  #  23 hours
+#Cactus::max_runtime=690  #  11.5 hours
+#Cactus::max_runtime=450  #  7.5 hours
+#Cactus::max_runtime=210  #  3.5 hours
+
+#------------------------------------------------------------------------------
+# Activate all necessary thorns:
+#------------------------------------------------------------------------------
+
+ActiveThorns = "Boundary CartGrid3D CoordBase Fortran InitBase IOUtil LocalReduce SymBase Time"
+ActiveThorns = "AEILocalInterp LocalInterp"
+ActiveThorns = "MoL Periodic Slab SpaceMask"
+ActiveThorns = "Carpet CarpetInterp CarpetIOASCII CarpetIOHDF5 CarpetIOScalar CarpetLib CarpetIOBasic CarpetReduce CarpetRegrid2 CarpetSlab LoopControl"
+#ActiveThorns = "Formaline NaNChecker TerminationTrigger TimerReport"
+ActiveThorns = "NaNChecker TerminationTrigger TimerReport"
+ActiveThorns = "ADMbase ADMcoupling ADMmacros CoordGauge StaticConformal"
+ActiveThorns = "Constants TmunuBase HydroBase "
+ActiveThorns = "EOS_Omni"
+ActiveThorns = "GRHydro GRHydro_InitData"
+ActiveThorns = "HDF5"
+ActiveThorns = "SystemStatistics"
+
+#------------------------------------------------------------------------------
+# Diagnostic parameters:
+#------------------------------------------------------------------------------
+#AHFinderDirect::verbose_level = "physics details"
+
+Carpet::output_timers_every = 1024
+Carpet::output_timer_tree_every = 256
+Carpet::output_initialise_timer_tree = "yes"
+Carpet::storage_verbose   = "no"
+#Carpet::timers_verbose    = "no"
+#Carpet::verbose           = "yes"  # only for Initial Data
+Carpet::verbose           = "no"
+Carpet::veryverbose       = "no"
+Carpet::grid_structure_filename = "carpet-grid-structure.asc"
+Carpet::grid_coordinates_filename = "carpet-grid-coordinates.asc"
+
+CarpetLib::output_bboxes  = "no"
+CarpetLib::print_memstats_every     = 1024
+CarpetLib::memstat_file    = "carpetlib-memory-statistics.asc"
+#CarpetLib::print_timestats_every    = 1024
+#CarpetLib::timestat_file    = "carpetlib-timing-statistics.asc"
+
+CarpetReduce::verbose    = "no"
+CarpetRegrid2::verbose    = "yes"
+#CarpetRegrid2::veryverbose    = "yes"
+
+#NaNChecker::verbose         = "all"
+
+TimerReport::out_every    = 1024
+TimerReport::out_filename = "TimerReport"
+#TimerReport::output_all_timers = "yes"
+#TimerReport::output_all_timers_together = "yes"
+#TimerReport::output_all_timers_readable = "yes"
+#TimerReport::before_checkpoint          = "yes"
+TimerReport::n_top_timers = 40
+
+#------------------------------------------------------------------------------
+# Utility parameters:
+#------------------------------------------------------------------------------
+
+#NaNChecker::check_every    =  16
+NaNChecker::check_every   =  1
+NaNChecker::check_vars = "
+            HydroBase::Bvec
+            HydroBase::rho 
+            HydroBase::eps 
+            HydroBase::press 
+            HydroBase::vel
+            HydroBase::w_lorentz
+"
+NaNChecker::action_if_found   =  "terminate"
+#NaNChecker::action_if_found  =  "abort"
+#NaNChecker::action_if_found = "just warn" #"terminate", "just warn", "abort"
+#NaNChecker::check_after=0
+
+#TerminationTrigger::max_walltime          =  0.0   # hours
+TerminationTrigger::max_walltime          =  24.0   # hours
+TerminationTrigger::on_remaining_walltime = 10.0   # minutes
+TerminationTrigger::termination_from_file   = "yes"
+TerminationTrigger::create_termination_file = "yes"
+TerminationTrigger::termination_file        = "../TERMINATE"
+
+
+#------------------------------------------------------------------------------
+# Run parameters:
+#------------------------------------------------------------------------------
+
+#------
+# Grid:
+#------
+
+Time::dtfac = 0.4
+MoL::ODE_Method             = "rk2"
+MoL::MoL_Intermediate_Steps = 2
+#MoL::ODE_Method             = "rk4"
+#MoL::MoL_Intermediate_Steps = 4
+#MoL::MoL_Num_Scratch_Levels = 1
+
+CartGrid3D::type         = "coordbase"
+CartGrid3D::domain       = "full"
+CartGrid3D::avoid_origin = "no"
+
+CoordBase::domainsize       = "minmax"
+CoordBase::spacing          = "gridspacing"  # "gridspacing" or "numcells"
+
+CoordBase::xmin =  -1.0
+CoordBase::ymin =  -0.5
+#CoordBase::zmin =  -0.031250
+CoordBase::zmin =  -0.015625
+CoordBase::xmax =   1.0
+CoordBase::ymax =   0.5
+#CoordBase::zmax =   0.031250
+CoordBase::zmax =   0.015625
+#CoordBase::dx   =   0.0156250  # dx or ncells_x
+#CoordBase::dy   =   0.0156250  # dy or ncells_y
+#CoordBase::dz   =   0.0156250  # dz or ncells_z
+CoordBase::dx   =   0.0078125  # dx or ncells_x
+CoordBase::dy   =   0.0078125  # dy or ncells_y
+CoordBase::dz   =   0.0078125  # dz or ncells_z
+
+CoordBase::boundary_size_x_lower        = 3
+CoordBase::boundary_size_y_lower        = 3
+CoordBase::boundary_size_z_lower        = 3
+CoordBase::boundary_size_x_upper        = 3
+CoordBase::boundary_size_y_upper        = 3
+CoordBase::boundary_size_z_upper        = 3
+CoordBase::boundary_shiftout_x_lower    = 0
+CoordBase::boundary_shiftout_y_lower    = 0
+CoordBase::boundary_shiftout_z_lower    = 0
+CoordBase::boundary_shiftout_x_upper    = 0
+CoordBase::boundary_shiftout_y_upper    = 0
+CoordBase::boundary_shiftout_z_upper    = 0
+CoordBase::boundary_staggered_x_lower   = "yes"
+CoordBase::boundary_staggered_y_lower   = "yes"
+CoordBase::boundary_staggered_z_lower   = "yes"
+CoordBase::boundary_staggered_x_upper   = "yes"
+CoordBase::boundary_staggered_y_upper   = "yes"
+CoordBase::boundary_staggered_z_upper   = "yes"
+
+Driver::ghost_size               = 3
+GRHydro::GRHydro_stencil            = 3
+
+Periodic::periodic = "yes"
+Periodic::periodic_x = "yes"
+Periodic::periodic_y = "yes"
+Periodic::periodic_z = "yes"
+
+# General Carpet parameters:
+Carpet::domain_from_coordbase    = "yes"
+Carpet::enable_all_storage       = "no"
+Carpet::schedule_barriers        = "no"
+
+CarpetLib::poison_new_memory         = "yes"
+CarpetLib::poison_value              = 114
+CarpetLib::check_bboxes              = "no"
+CarpetLib::interleave_communications = "yes"
+#CarpetLib::vary_tags                 = "yes" # git version only!
+CarpetLib::combine_sends             = "yes"
+#CarpetLib::reduce_mpi_waitall        = "yes" # git version only!
+
+CarpetInterp::tree_search = "yes"
+CarpetInterp::check_tree_search = "no"
+
+#------
+# MODEL:
+#------
+
+HydroBase::initial_hydro         = "advectedloop"
+
+GRHydro_InitData::advectedloop_type = "2D"
+#GRHydro_InitData::advectedloop_case = "V^z/=0"
+GRHydro_InitData::advectedloop_case = "V^z=0"
+GRHydro_InitData::advectedloop_delA = "Exact"
+#GRHydro_InitData::advectedloop_delA = "Numeric"
+
+EOS_Omni::gl_gamma                 = 1.666666666666667
+GRHydro::initial_Gamma             = 1.666666666666667
+
+#----------
+# Numerics:
+#----------
+
+#TmunuBase::stress_energy_storage = "yes"
+#TmunuBase::stress_energy_at_RHS  = "no"
+#TmunuBase::timelevels            =  1
+#TmunuBase::prolongation_type     = "none"
+
+HydroBase::timelevels            = 2
+#HydroBase::timelevels            = 3
+
+SpaceMask::use_mask      = "yes"
+
+#-----------
+# Evolution:
+#-----------
+
+HydroBase::evolution_method      = "GRHydro"
+HydroBase::Bvec_evolution_method = "GRHydro"
+
+GRHydro::method_type               = "RSA FV"
+GRHydro::recon_method              = "tvd"
+GRHydro::tvd_limiter               = "vanleerMC2"
+GRHydro::recon_vars                = "primitive"
+GRHydro::riemann_solver            = "HLLE"
+GRHydro::bound                     = "none"
+GRHydro::GRHydro_eos_type          = "General"
+GRHydro::GRHydro_eos_table         = "Ideal_Fluid"
+
+GRHydro::Grhydro_MaxNumConstrainedVars = 13
+GRHydro::GRHydro_MaxNumEvolvedVars     = 10
+
+GRHydro::clean_divergence          = "yes"
+GRHydro::kap_dc                    = 10.0
+GRHydro::track_divB                = "yes"
+GRHydro::calculate_bcom            = "yes"
+
+GRHydro::psidcspeed = "light speed"
+GRHydro::decouple_normal_Bfield = "yes"
+
+#------------------------------------------------------------------------------
+# Output:
+#------------------------------------------------------------------------------
+
+IO::out_dir = $parfile
+IO::out_fileinfo           = "none"
+
+IOBasic::outInfo_every = 1
+IOBasic::outInfo_reductions = "maximum"
+IOBasic::outInfo_vars  = "
+ Carpet::physical_time_per_hour
+ GRHydro::bcom_sq
+ HydroBase::press
+ HydroBase::rho
+ SystemStatistics::maxrss_mb
+"
+
+#IOScalar::outScalar_every      = 1024
+IOScalar::outScalar_every      = 320   #t=1
+IOScalar::one_file_per_group   = "yes"
+IOScalar::outScalar_reductions = "minimum maximum average norm1 norm2"
+IOScalar::outScalar_vars       = "
+ GRHydro::bcom
+ GRHydro::bcom0
+ GRHydro::bcom_sq
+ GRHydro::Bcons
+ GRHydro::dens
+ GrHydro::divB
+ GRHydro::scon
+ GRHydro::tau
+ HydroBase::Bvec
+ HydroBase::eps
+ HydroBase::press
+ HydroBase::rho
+ HydroBase::vel
+ HydroBase::w_lorentz
+ SystemStatistics::process_memory_mb
+"
+
+IOASCII::one_file_per_group     = "yes"
+IOASCII::output_symmetry_points = "no"
+IOASCII::output_ghost_points    = "no"  #hg version only!
+IOASCII::output_boundary_points = "no"  #hg version only!
+#IOASCII::out3D_ghosts       = "no"  #hg (DEPRECATED)
+#IOASCII::out3D_outer_ghosts = "no" #hg (DEPRECATED)
+
+IOASCII::out0D_every     = 320
+IOASCII::out0D_vars      = "
+ Carpet::timing
+"
+
+#Set these IOASCII options for initial data only:
+IOASCII::out1D_every     = 7680
+#IOASCII::out1D_dt        = 10
+IOASCII::out1D_d         = "yes"
+IOASCII::out1D_vars      = "
+ GRHydro::bcom
+ GRHydro::bcom0
+ GRHydro::bcom_sq
+ GRHydro::Bcons
+ GRHydro::dens
+ GrHydro::divB
+ GrHydro::psidc
+ GRHydro::scon
+ GRHydro::tau
+ HydroBase::Bvec
+ HydroBase::eps
+ HydroBase::press
+ HydroBase::rho
+ HydroBase::vel
+ HydroBase::w_lorentz
+"
+
+#IOASCII::out2D_every     = 256000000
+#IOASCII::out2D_vars      = "
+# GRHydro::bcom
+# GRHydro::bcom0
+# GRHydro::bcom_sq
+# GRHydro::Bcons
+# GRHydro::dens
+# GrHydro::divB
+# GRHydro::scon
+# GRHydro::tau
+# HydroBase::Bvec
+# HydroBase::eps
+# HydroBase::press
+# HydroBase::rho
+# HydroBase::vel
+# HydroBase::w_lorentz
+#"
+
+CarpetIOHDF5::one_file_per_group             = "yes"
+CarpetIOHDF5::open_one_input_file_at_a_time  = "yes"
+
+CarpetIOHDF5::output_symmetry_points         = "yes"
+CarpetIOHDF5::output_ghost_points            = "yes"
+CarpetIOHDF5::output_boundary_points         = "yes"
+CarpetIOHDF5::output_buffer_points           = "yes"
+
+CarpetIOHDF5::out2D_every                    = 160
+CarpetIOHDF5::out2D_xy                       = "yes"
+CarpetIOHDF5::out2D_xz                       = "no"
+CarpetIOHDF5::out2D_yz                       = "no"
+CarpetIOHDF5::out2D_xyplane_z                = 0.0
+CarpetIOHDF5::out2D_vars      = "
+ GRHydro::bcom
+ GRHydro::bcom0
+ GRHydro::bcom_sq
+ GRHydro::Bcons
+ GRHydro::dens
+ GRHydro::divB
+ GrHydro::psidc
+ GRHydro::scon
+ GRHydro::tau
+ Grid::coordinates
+ HydroBase::Bvec
+ HydroBase::eps
+ HydroBase::press
+ HydroBase::rho
+ HydroBase::vel
+ HydroBase::w_lorentz
+"
+
+CarpetIOHDF5::out3D_every = 1920
+CarpetIOHDF5::out3D_vars  = "
+ GRHydro::bcom
+ GRHydro::bcom0
+ GRHydro::bcom_sq
+ GRHydro::divB
+ HydroBase::Bvec
+ HydroBase::eps
+ HydroBase::press
+ HydroBase::rho
+ HydroBase::vel
+ HydroBase::w_lorentz
+"
+
+#------------------------------------------------------------------------------
+# Analysis:
+#------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
+# Checkpoint/Recovery:
+#------------------------------------------------------------------------------
+#IOHDF5::checkpoint                  = "yes"
+#IO::checkpoint_dir                  = $parfile
+#IO::checkpoint_ID                   = "yes"
+#IO::checkpoint_every                = 6144
+##IO::checkpoint_every_walltime_hours = 6.0
+#IO::checkpoint_keep=3
+#IO::checkpoint_on_terminate         = "yes"
+
+#IO::recover     = "autoprobe"
+#IO::recover_dir = $parfile
+
+

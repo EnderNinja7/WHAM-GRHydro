@@ -1,0 +1,366 @@
+% /*@@
+%   @file      documentation.tex
+%   @date      23 April 2002
+%   @author    Denis Pollney
+%   @desc 
+%              LegoExcision users guide.
+%   @enddesc 
+%   @version $Header$      
+% @@*/
+
+\documentclass{article}
+
+% Use the Cactus ThornGuide style file
+% (Automatically used from Cactus distribution, if you have a 
+%  thorn without the Cactus Flesh download this from the Cactus
+%  homepage at www.cactuscode.org)
+\usepackage{../../../../doc/latex/cactus}
+
+\begin{document}
+
+\title{Using LegoExcision}
+\author{Denis Pollney}
+\date{$ $Date$ $}
+
+\maketitle
+
+% Do not delete next line
+% START CACTUS THORNGUIDE
+
+\begin{abstract}
+  LegoExcision implements excision on a Cactus grid. It uses a mask
+  function to determine which grid points are to be excised, then
+  applies a simple boundary condition to points on the edge of the
+  mask.
+\end{abstract}
+
+\section{Background}
+
+The \texttt{LegoExcision} thorn was originally written spring 2001 by
+Miguel Alcubierre, Eric Schnetter and Deirdre Shoemaker. It extends
+the functionality of Miguel's \texttt{SimpleExcision} thorn (described
+in \cite{alcubierre-bruegmann:2001}) by allowing arbitrary shapes and
+number of holes to be excised.
+
+\section{Implementing excision in a thorn}
+
+\texttt{LegoExcision} is not scheduled. It simply provides three
+functions (\texttt{excision\_findboundary()},
+\texttt{excision\_findnormals()} and 
+\texttt{excision\_extrapolate()}) which are used to apply the excision
+boundary condition to a grid function. This functions must be called at
+the appropriate time (eg. whenever boundary conditions are applied)
+within the source code of any thorn that wishes to use excision.
+The functions are written in Fortran90, and no C wrappers exist as of
+yet.
+
+The first function, \texttt{excision\_findboundary()}, can be used to
+mark the boundaries of an excision region in the mask function. It
+is passed the mask in the form of a Cactus gridfunction which has
+interior points marked appropriately (see Section \ref{sec:mask},
+below). It then passes over the mask and marks any point which is on
+the boundary of an excision region. Boundary points are any point
+which has at least one neighbour that is not excised.
+\\\vspace{\baselineskip}
+
+\parbox{.9\linewidth}{
+\texttt{excision\_findboundary (\emph{ierr}, \emph{mask}, \emph{ni},
+  \emph{nj}, \emph{nk})}
+
+\begin{description}
+\item{\texttt{\emph{ierr}}} \texttt{(integer)}
+  Holds the return value, 0 for success.
+\item{\texttt{\emph{mask}}} \texttt{(CCTK\_REAL(ni,nj,nk))}
+  A Cactus gridfunction (array of \texttt{CCTK\_REAL} whose
+  dimensions are given by the \texttt{cctk\_lsh} variables)
+  which contians the excision mask.
+\item{\texttt{\emph{ni}}, \texttt{\emph{nj}}, \texttt{\emph{nk}}} (integer)
+  Dimensions of the grid, corresponding to \texttt{cctk\_lsh(1...3)}.
+\end{description}
+}\\\vspace{\baselineskip}
+
+Next, the function \texttt{excision\_findnormals()} can be used to
+determine normal directions from each point on the excision boundary.
+The normals are stored in three grid functions (\texttt{dirx},
+\texttt{diry} and \texttt{dirz}) which contain the $(x,y,z)$
+components of the normal vector for points on the boundary. The normal
+is determined as a sum of the relative components of each active
+(non-excised) neighbour,
+\begin{equation}
+n^i = \sum_{x^\prime\in\{\text{neighbours of} x\}} x^{\prime i} - x^i,
+\end{equation}
+which is then normalised. For points which are not on the excision
+boundary, the normal is set to $0$.\\\vspace{\baselineskip}
+
+\parbox{.9\linewidth}{
+\texttt{excision\_findnormals (\emph{ierr}, \emph{mask}, \emph{dirx},
+  \emph{diry}, \emph{dirz}, \emph{ni}, \emph{nj}, \emph{nk})}
+\begin{description}
+  \item[\texttt{\emph{ierr}}] (\texttt{integer})
+    Holds the return value, 0 for success.
+  \item[\texttt{\emph{mask}}] (\texttt{CCTK\_REAL(ni,nj,nk)})
+    A Cactus gridfunction which contians the excision mask.
+  \item[\texttt{\emph{dirx}}, \texttt{\emph{diry}},
+    \texttt{\emph{dirz}}] (\texttt{CCTK\_REAL(ni,nj,nk)})
+    Grid functions describing the normal directions to the excision
+    boundary. These are determined by \texttt{excision\_findnormals()}.
+  \item[\texttt{\emph{ni}}, \texttt{\emph{nj}}, \texttt{\emph{nk}}]
+    (\texttt{integer}) Dimensions of the grid, corresponding to
+    \texttt{cctk\_lsh(1...3)}.
+\end{description}
+}\\\vspace{\baselineskip}
+
+Finally, the \texttt{excision\_extrapolate()} routine applies the a
+boundary condition to a grid function at each point that the mask has
+identified as an excision boundary. At present, only one boundary
+condition is implemented, which corresponds to the `time derivative
+copy' which was successfully used in
+\cite{alcubierre-bruegmann:2001}. Namely, the time derivative $dv/dt$
+of the variable is determined at one point away from the excision
+boundary, and copied to the excision boundary where it is used as a
+source. This determines a new value on the boundary at the next
+timeslice.\\\vspace{\baselineskip}
+
+\parbox{.9\linewidth}{
+\texttt{excision\_extrapolate (\emph{ierr}, \emph{var}, \emph{oldvar},
+  \emph{mask}, \emph{dirx}, \emph{diry}, \emph{dirz}, \emph{ni},
+  \emph{nj}, \emph{nk}, \emph{var0})}
+\begin{description}
+  \item[\texttt{\emph{ierr}}] (\texttt{integer})
+    Holds the return value, 0 for success.
+  \item[\texttt{\emph{var}}] (\texttt{CCTK\_REAL(ni,nj,nk)})
+    A Cactus gridfunction (array of \texttt{CCTK\_REAL} whose
+    dimensions are given by the \texttt{cctk\_lsh} variables)
+    corresponding the the variable to which excision is to be applied.
+  \item[\texttt{\emph{oldvar}}] (\texttt{CCTK\_REAL(ni,nj,nk)})
+    A Cactus gridfunction holding the values of the variable
+    to be excised on the previous slice (ie. previous time).
+  \item[\texttt{\emph{mask}}] (\texttt{CCTK\_REAL(ni,nj,nk)})
+    A Cactus gridfunction which contians the excision mask.
+  \item[\texttt{\emph{dirx}}, \texttt{\emph{diry}},
+    \texttt{\emph{dirz}}] (\texttt{CCTK\_REAL(ni,nj,nk)}]
+    Grid functions describing the normal directions to the excision
+    boundary. These are determined by \texttt{excision\_findnormals()}.
+  \item[\texttt{\emph{ni}}, \texttt{\emph{nj}}, \texttt{\emph{nk}}]
+    (\texttt{integer}) Dimensions of the grid, corresponding to
+    \texttt{cctk\_lsh(1...3)}.
+  \item[\texttt{\emph{var0}}] (\texttt{CCTK\_REAL})
+    A constant value which will be written to all points of the grid
+    function within the excision mask.
+\end{description}
+}\\ \vspace{\baselineskip}
+
+For example, given an excision mask \texttt{ex\_mask}, excision can
+be applied to the grid functions \texttt{fn0}, \texttt{fn1}
+and \texttt{fn2} using the following code:
+
+\begin{verbatim}
+       call excision_findboundary (ierr, ex_mask, nx, ny, nz)
+       call excision_findnormals (ierr, ex_mask, normx, normy, normz, nx,
+     +   ny, nz)
+
+       call excision_extrapolate (ierr, fn0, fn0_p, ex_mask, normx,
+     +   normy, normz, nx, ny, nz, 0.d0)
+       call excision_extrapolate (ierr, fn1, fn1_p, ex_mask, normx,
+     +   normy, normz, nx, ny, nz, 0.d0)
+       call excision_extrapolate (ierr, fn2, fn2_p, ex_mask, normx,
+     +   normy, normz, nx, ny, nz, 1.d0)
+\end{verbatim}
+
+Since  the excision  mask  is the  same  for each  grid function,  the
+boundary  and normals  only  needed  to be  determined  once. In  this
+example, \texttt{normx}, \texttt{normy}  and \texttt{normz} are cactus
+grid functions which should have been declared as, for instance,
+\begin{verbatim}
+  real ex_norm type=GF
+  {
+    normx,
+    normy,
+    normz
+  } "Excision boundary normals"
+\end{verbatim}
+in the \texttt{param.ccl} of the thorn implementing this code, or one
+from which it inherits. The same is true of the excision mask.  The
+\texttt{fn0\_p} grid function should hold the value of \texttt{fn0} on
+the previous timestep.
+
+The final argument which is passed is a value which is used to
+overwrite grid function values within the excision region. Thus,
+though boundary points have a value applied by
+\texttt{excision\_extrapolate()}, points of \texttt{fn0} within the
+boundary are overwritten by the value $0$, while for \texttt{fn2} the
+value $1$ is used instead.
+
+Finally, note that any thorn which uses code as in the example above
+will depend on the \texttt{LegoExcision} thorn, and thus should
+declare
+\begin{verbatim}
+  inherits: legoexcision
+\end{verbatim}
+in its \texttt{interface.ccl}, otherwise it will not compile unless
+\texttt{LegoExcision} is also included. This can be avoided through
+use of an \texttt{\#ifdef} clause around any section of code which
+refers directly to \texttt{LegoExcision}:
+\begin{verbatim}
+  #ifdef EXCISION_LEGOEXCISION
+  ...
+  #endif
+\end{verbatim}
+This is, however, considered to be dubious form.
+
+\section{The mask function}
+\label{sec:mask}
+
+The mask should be declared as a real-valued grid function, thus
+something like
+\begin{verbatim}
+  real legoexcision_mask type=GF
+  {
+    ex_mask
+  } "Excision mask"
+\end{verbatim}
+in the calling thorn, or one which it inherits. Each point of the mask
+should take one of the following values, defined in
+\texttt{maskvalues.h}:
+
+\begin{description}
+  \item[\texttt{MASK\_EXCISED}] points which are within the excision region;
+  \item[\texttt{MASK\_BOUNDARY}] points on the excision boundary;
+  \item[\texttt{MASK\_ACTIVE}] normal (non-excised) grid points.
+\end{description}
+
+The \texttt{LegoExcision} thorn does not specify any criteria for how
+these points should be set (ie. which points should be marked as
+excision points), but rather assumes that they have already been set by
+the calling thorn, or at some other point in the schedule. Thus, for
+instance for black hole evolutions, a horizon finder could be used to
+set an excision mask which would then be passed to an evolution thorn
+to ensure that points within horizon are not evolved. Note also that the
+mask function does not need to have boundary points identified, as the
+\texttt{excision\_findboundary()} function can be used to locate them.
+
+The \texttt{CactusEinstein/Einstein} thorn defines a generic mask
+function \texttt{einstein::emask} whose values are not defined, and
+can be used for this purpose. Storage for this grid function is turned
+on based on the value of the \texttt{einstein::use\_mask} parameter.
+
+Note that as of the time of writing, the
+\texttt{Einstein} heirarchy is undergoing a revision and the details
+of this description are likely to be modified. In particular, the use
+of the \texttt{Einstein} mask function is being formalised, so that at
+least the above definitions will change in the near future.
+
+\section{Boundary conditions}
+
+As mentioned above, the \texttt{LegoExcision} thorn applies a copying
+condition to points on the excision boundary. Namely, the time
+derivative is determined at one point away from the boundary in the
+direction determined by the normal. This time derivative is then
+applied to evolve the variable on the excision boundary.
+
+For black hole spacetimes, it is possible that this condition is
+sufficient, since it is usually assumed that excision is only applied
+within an event horizon so that errors are causally propogated into
+the excision region. This particular condition has the advantage that
+if the spacetime is stationary, or evolves to a stationary state,
+outside of the excision region then the boundary respects this.
+
+\section{Using excision}
+
+The \texttt{LegoExcision} thorn has no parameters. To activate
+excision, include \texttt{LegoExcision} in the \texttt{ActiveThorns}
+any parameter file:
+\begin{verbatim}
+  ActiveThorns = "... LegoExcision ..."
+\end{verbatim}
+This will ensure that the functions described above are available
+to any thorn which has implemented them.
+
+\section{Thorns which use \texttt{LegoExcision}}
+
+A number of the existing physic thorns can be used in conjunction with
+\texttt{LegoExcision}. In particular, the horizon finder can be used
+to set the mask to excise regions within the horizon so that they are
+not evolved by the BSSN evolution system.\\
+
+The apparent horizon finder, \texttt{CactusEinstein/AHFinder},
+includes a number of parameters which can be used to set a mask:
+\begin{description}
+  \item[\texttt{ahf\_mask}] By setting this to either
+    ``\texttt{strong}'' or ``\texttt{weak}'', the mask will be set to
+    excise points within any detected horizon. The difference between
+    the two is that if ``\texttt{weak}'' is specified then the mask
+    will be set even if only a probable marginally trapped surface is
+    found, while ``\texttt{strong}'' will only set the mask if a
+    horizon is definitely found. Usually it is fine to set
+    \texttt{ahfinder::ahf\_mask="weak"}.
+  \item[\texttt{ahf\_masktype}] This parameter sets the shape of the
+    mask which is set. If set to ``\texttt{cube}'', then a region the
+    shape of a cube will be used. The largest cube which fits entirely
+    within the horizon will be used. This option was used for
+    comparison with earlier results using \texttt{SimpleExcision}.
+  \item[\texttt{ahf\_mask\_0, ahf\_mask\_1, ahf\_mask\_2}]
+    These parameters determine whether the mask should be set for the
+    respective horizons.
+  \item[\texttt{ahf\_maskbuffer}] This fixes the minimum number of
+    points which must exist between the apparent horizon and the
+    excision region. Thus, the masked region will sit within a 
+    ``buffer'' region of the specified width from the horizon.
+  \item[\texttt{ahf\_maskshrink}] The region which is masked will be
+    smaller than the actual horizon by a factor which is specified by
+    this parameter. As with the \texttt{ahf\_maskbuffer} parameter,
+    this can be used to control the size of the buffer region between
+    the horizon and the region to be excised.
+\end{description}
+
+If the apparent horizon finder is called with \texttt{ahf\_mask} set
+to either ``\texttt{weak}'' or ``\texttt{strong}'', then the grid
+function \texttt{einstein::emask} will be initialised according to the
+horizon locations, and can then be passed to the \texttt{LegoExcision}
+functions.\\
+
+The \texttt{AEIThorns/ADM\_BSSN} thorn can make use of a
+\texttt{LegoExcision} mask for evolutions. In order to turn on
+excision for an evolution, the parameters
+\begin{verbatim}
+  adm_bssn::excise = "yes"
+  adm_bssn::excisiontype = "lego"
+\end{verbatim}
+should be set. The same holds for the \texttt{BSSN\_MoL} thorn.\\
+
+The \texttt{Einstein/ADMConstraints} thorn also respects the
+\texttt{einstein::emask}, so that the constraints will not be
+calculated within the excision region. To enable this feature,
+set
+\begin{verbatim}
+  admconstraints::excise = "yes"
+\end{verbatim}
+\vspace{\baselineskip}
+
+In summary, to use \texttt{LegoExcision} in a BSSN evolution using the
+horizon finder to set the mask, modifications along the following
+lines need to be made to a parameter file:
+\begin{verbatim}
+  activethorns = "... einstein adm_bssn ahfinder legoexcision ..."
+
+  einstein::use_mask = "yes"
+
+  adm_bssn::excise = "yes"
+  adm_bssn::excisiontype = "lego"
+
+  ahfinder::ahf_mask = "weak"
+  ahfinder::ahf_maskbuffer = 0.9
+\end{verbatim}
+
+\begin{thebibliography}{9}
+  \bibitem{alcubierre-bruegmann:2001}
+    Miguel Alcubierre and Bernd Br\"ugmann (2001)
+    \emph{Simple excision of a black hole in (3+1)d numerical
+    relativity},
+    Phys. Rev. \textbf{D63}, 104006 (gr-qc/0008067).
+\end{thebibliography}
+
+
+% Do not delete next line
+% END CACTUS THORNGUIDE
+\end{document}

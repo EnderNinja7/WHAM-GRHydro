@@ -1,0 +1,25 @@
+# Schedule definitions for thorn GRHydro_Refluxing
+
+STORAGE: indices
+
+SCHEDULE GRHydro_Refluxing_ParamCheck AT CCTK_PARAMCHECK
+{
+  LANG: C
+} "Check parameters"
+
+# must be scheduled after all of the refluxed variables that will be evolved
+# with MoL are registered with MoL
+SCHEDULE GRHydro_Refluxing_SetupVars IN MoL_Register AFTER GRHydro_Register
+{
+  LANG: C
+} "Register evolved variables"
+
+# Capture the fluxes inside GRHydro's RHS calculation
+SCHEDULE GRHydro_Refluxing_CaptureFluxes IN FluxTerms AFTER Riemann BEFORE UpdateCalcul
+{
+  LANG: Fortran
+} "Capture and store the flux terms"
+
+SCHEDULE GROUP RefluxingSyncGroup IN GRHydroRHS AFTER FluxTerms
+{
+} "Sychronize the captured fluxes"

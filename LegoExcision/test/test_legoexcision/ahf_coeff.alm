@@ -1,0 +1,21 @@
+# Radial coefficients
+#
+# centered on:   0.000000E+00  0.000000E+00  0.000000E+00
+# Time step    0
+# Time   0.000000E+00
+# Call    1
+# Surface found: Outer horizon
+#
+#     a_lm       l   m
+#
+  2.030634E+00   0   0
+ 
+# centered on:   0.000000E+00  0.000000E+00  0.000000E+00
+# Time step    3
+# Time   3.000000E-01
+# Call    2
+# Surface found: Outer horizon
+#
+#     a_lm       l   m
+#
+  2.104909E+00   0   0
