@@ -1,0 +1,251 @@
+# Interface definition for thorn GRHydro_Init_Data
+# $Header$
+
+implements: GRHydro_init_data
+inherits: GRHydro grid EOS_Omni
+
+#USES INCLUDE: EOS_Base.inc
+USES INCLUDE: SpaceMask.h
+#USES INCLUDE: EOS_Base.h
+
+
+SUBROUTINE SpatialDet(CCTK_REAL IN gxx, CCTK_REAL IN gxy, \
+                      CCTK_REAL IN gxz, CCTK_REAL IN gyy, \
+		      CCTK_REAL IN gyz, CCTK_REAL IN gzz, \
+		      CCTK_REAL OUT det)
+
+SUBROUTINE Prim2ConPoly(CCTK_INT IN handle, \
+                        CCTK_REAL IN gxx, CCTK_REAL IN gxy, CCTK_REAL IN gxz, \
+			CCTK_REAL IN gyy, CCTK_REAL IN gyz, CCTK_REAL IN gzz, \
+			CCTK_REAL IN det, CCTK_REAL OUT dens, \
+			CCTK_REAL OUT sx, CCTK_REAL OUT sy, \
+			CCTK_REAL OUT sz, CCTK_REAL OUT tau, \
+			CCTK_REAL IN rho, CCTK_REAL IN velx, \
+			CCTK_REAL IN vely, \
+			CCTK_REAL IN velz, CCTK_REAL OUT epsilon, \
+			CCTK_REAL OUT press, CCTK_REAL OUT w_lorentz)
+
+
+SUBROUTINE Prim2ConGen(CCTK_INT IN handle, \
+                          CCTK_REAL IN gxx, CCTK_REAL IN gxy, \
+                          CCTK_REAL IN gxz, CCTK_REAL IN gyy, \
+                          CCTK_REAL IN gyz, CCTK_REAL IN gzz, \
+                          CCTK_REAL IN det, CCTK_REAL OUT dens, \
+                          CCTK_REAL OUT sx, CCTK_REAL OUT sy, \
+                          CCTK_REAL OUT sz, CCTK_REAL OUT tau, \
+                          CCTK_REAL IN rho, CCTK_REAL IN velx, \
+                          CCTK_REAL IN vely, \
+                          CCTK_REAL IN velz, CCTK_REAL IN epsilon, \
+                          CCTK_REAL OUT press, CCTK_REAL OUT w_lorentz)
+
+SUBROUTINE Prim2ConPolyM(CCTK_INT IN handle, \
+                           CCTK_REAL IN gxx, CCTK_REAL IN gxy, \
+                           CCTK_REAL IN gxz, CCTK_REAL IN gyy, \
+                           CCTK_REAL IN gyz, CCTK_REAL IN gzz, \
+                           CCTK_REAL IN det, CCTK_REAL OUT dens, \
+                           CCTK_REAL OUT sx, CCTK_REAL OUT sy, \
+                           CCTK_REAL OUT sz, CCTK_REAL OUT tau, \
+                           CCTK_REAL OUT Bconsx, CCTK_REAL OUT Bconsy, \
+                           CCTK_REAL OUT Bconsz, CCTK_REAL IN rho, CCTK_REAL IN velx, \
+                           CCTK_REAL IN vely, \
+                           CCTK_REAL IN velz, CCTK_REAL OUT epsilon, \
+                           CCTK_REAL OUT press,  CCTK_REAL IN Bvecx, CCTK_REAL IN Bvecy, \
+                           CCTK_REAL IN Bvecz, CCTK_REAL OUT w_lorentz)
+
+SUBROUTINE Prim2ConGenM(CCTK_INT IN handle, \
+                          CCTK_REAL IN gxx, CCTK_REAL IN gxy, \
+                          CCTK_REAL IN gxz, CCTK_REAL IN gyy, \
+                          CCTK_REAL IN gyz, CCTK_REAL IN gzz, \
+                          CCTK_REAL IN det, CCTK_REAL OUT dens, \
+                          CCTK_REAL OUT sx, CCTK_REAL OUT sy, \
+                          CCTK_REAL OUT sz, CCTK_REAL OUT tau, \
+                          CCTK_REAL OUT Bconsx, CCTK_REAL OUT Bconsy, \
+                          CCTK_REAL OUT Bconsz, CCTK_REAL IN rho, CCTK_REAL IN velx, \
+                          CCTK_REAL IN vely, \
+                          CCTK_REAL IN velz, CCTK_REAL IN epsilon, \
+                          CCTK_REAL OUT press, CCTK_REAL IN Bvecx, CCTK_REAL IN Bvecy, \
+                          CCTK_REAL IN Bvecz, CCTK_REAL OUT w_lorentz)
+
+SUBROUTINE Prim2ConGenM_hot(CCTK_INT IN handle, CCTK_INT IN GRHydro_reflevel, CCTK_INT IN i, CCTK_INT IN j, CCTK_INT IN k, \
+                          CCTK_REAL IN x, CCTK_REAL IN y, CCTK_REAL IN z, \
+                          CCTK_REAL IN gxx, CCTK_REAL IN gxy, \
+                          CCTK_REAL IN gxz, CCTK_REAL IN gyy, \
+                          CCTK_REAL IN gyz, CCTK_REAL IN gzz, \
+                          CCTK_REAL IN det, CCTK_REAL OUT dens, \
+                          CCTK_REAL OUT sx, CCTK_REAL OUT sy, \
+                          CCTK_REAL OUT sz, CCTK_REAL OUT tau, \
+                          CCTK_REAL OUT Bconsx, CCTK_REAL OUT Bconsy, \
+                          CCTK_REAL OUT Bconsz, CCTK_REAL IN rho, CCTK_REAL IN velx, \
+                          CCTK_REAL IN vely, \
+                          CCTK_REAL IN velz, CCTK_REAL IN epsilon, \
+                          CCTK_REAL OUT press, CCTK_REAL IN Bvecx, CCTK_REAL IN Bvecy, \
+                          CCTK_REAL IN Bvecz, CCTK_REAL OUT w_lorentz, \
+                          CCTK_REAL INOUT temperature, CCTK_REAL IN Y_e)
+
+
+SUBROUTINE Con2PrimPoly(CCTK_INT IN handle, CCTK_REAL INOUT dens, \
+                           CCTK_REAL INOUT sx, CCTK_REAL INOUT sy, \
+                           CCTK_REAL INOUT sz, CCTK_REAL OUT tau, \
+                           CCTK_REAL INOUT rho, CCTK_REAL INOUT velx, \
+                           CCTK_REAL INOUT vely, CCTK_REAL INOUT velz, \
+                           CCTK_REAL INOUT epsilon, CCTK_REAL INOUT press, \
+                           CCTK_REAL INOUT w_lorentz, CCTK_REAL IN uxx, \
+                           CCTK_REAL IN uxy, CCTK_REAL IN uxz, \
+                           CCTK_REAL IN uyy, CCTK_REAL IN uyz, \
+                           CCTK_REAL IN uzz, CCTK_REAL IN det, \
+                           CCTK_REAL IN x, CCTK_REAL IN y, CCTK_REAL IN z, \
+                           CCTK_REAL IN r, CCTK_REAL IN rho_min, \
+			   CCTK_INT IN GRHydro_reflevel, CCTK_REAL OUT GRHydro_C2P_failed)
+
+
+void FUNCTION Con2PrimGen(CCTK_INT IN handle, CCTK_REAL INOUT dens, \
+                           CCTK_REAL INOUT sx, CCTK_REAL INOUT sy, CCTK_REAL INOUT sz, \
+                           CCTK_REAL INOUT tau, CCTK_REAL INOUT rho, \
+                           CCTK_REAL INOUT velx, CCTK_REAL INOUT vely, CCTK_REAL INOUT velz, \
+                           CCTK_REAL INOUT epsilon, CCTK_REAL INOUT pressure, \
+                           CCTK_REAL INOUT w_lorentz, \
+                           CCTK_REAL IN uxx, CCTK_REAL IN uxy, CCTK_REAL IN uxz, \
+                           CCTK_REAL IN uyy, CCTK_REAL IN uyz, CCTK_REAL IN uzz, \
+                           CCTK_REAL IN det, \
+                           CCTK_REAL IN x, CCTK_REAL IN y, CCTK_REAL IN z, \
+                           CCTK_REAL IN r, \
+                           CCTK_INT OUT epsnegative, \
+		           CCTK_REAL IN GRHydro_rho_min, CCTK_REAL IN pmin, \
+		           CCTK_REAL IN epsmin, \
+                           CCTK_INT IN GRHydro_reflevel, \
+                           CCTK_REAL OUT retval)
+
+void FUNCTION Con2PrimGenM(CCTK_INT IN handle, CCTK_INT IN keytemp, CCTK_REAL IN prec,CCTK_REAL IN gamma_eos, CCTK_REAL INOUT dens, \
+                           CCTK_REAL INOUT sx, CCTK_REAL INOUT sy, CCTK_REAL INOUT sz, \
+                           CCTK_REAL INOUT tau, CCTK_REAL IN Bconsx, CCTK_REAL IN Bconsy, CCTK_REAL IN Bconsz, \
+			   CCTK_REAL INOUT y_e,  CCTK_REAL INOUT temp,  CCTK_REAL INOUT rho, \
+                           CCTK_REAL INOUT velx, CCTK_REAL INOUT vely, CCTK_REAL INOUT velz, \
+                           CCTK_REAL INOUT epsilon, CCTK_REAL INOUT pressure, \
+                           CCTK_REAL OUT Bvecx, CCTK_REAL OUT Bvecy, CCTK_REAL OUT Bvecz, \
+                           CCTK_REAL OUT bvecsq, \
+                           CCTK_REAL INOUT w_lorentz, \
+                           CCTK_REAL IN gxx, CCTK_REAL IN gxy, CCTK_REAL IN gxz, \
+                           CCTK_REAL IN gyy, CCTK_REAL IN gyz, CCTK_REAL IN gzz, \
+                           CCTK_REAL IN uxx, CCTK_REAL IN uxy, CCTK_REAL IN uxz, \
+                           CCTK_REAL IN uyy, CCTK_REAL IN uyz, CCTK_REAL IN uzz, \
+                           CCTK_REAL IN det, \
+                           CCTK_INT OUT epsnegative, \
+                           CCTK_REAL OUT retval)
+
+void FUNCTION Con2PrimGenMee(CCTK_INT IN handle, CCTK_INT IN keytemp, \
+     CCTK_REAL IN prec, CCTK_REAL IN gamma_eos, \
+     CCTK_REAL INOUT dens, \
+     CCTK_REAL INOUT sx, CCTK_REAL INOUT sy, CCTK_REAL INOUT sz, \
+     CCTK_REAL INOUT tau, \
+     CCTK_REAL IN Bconsx, CCTK_REAL IN Bconsy, CCTK_REAL IN Bconsz, \
+     CCTK_REAL INOUT entropycons, \
+     CCTK_REAL INOUT y_e, CCTK_REAL INOUT temp, CCTK_REAL INOUT rho, \
+     CCTK_REAL INOUT velx, CCTK_REAL INOUT vely, CCTK_REAL INOUT velz, \
+     CCTK_REAL INOUT epsilon, CCTK_REAL INOUT pressure, \
+     CCTK_REAL OUT Bvecx, CCTK_REAL OUT Bvecy, CCTK_REAL OUT Bvecz, \
+     CCTK_REAL OUT Bvecsq, \
+     CCTK_REAL INOUT w_lorentz, \
+     CCTK_REAL IN gxx, CCTK_REAL IN gxy, CCTK_REAL IN gxz, \
+     CCTK_REAL IN gyy, CCTK_REAL IN gyz, CCTK_REAL IN gzz, \
+     CCTK_REAL IN uxx, CCTK_REAL IN uxy, CCTK_REAL IN uxz, \
+     CCTK_REAL IN uyy, CCTK_REAL IN uyz, CCTK_REAL IN uzz, \
+     CCTK_REAL IN det, \
+     CCTK_INT OUT epsnegative, \
+     CCTK_REAL OUT retval)
+
+void FUNCTION Con2PrimPolyM(CCTK_INT IN handle, CCTK_REAL IN gamma_eos, CCTK_REAL INOUT dens, \
+                           CCTK_REAL INOUT sx, CCTK_REAL INOUT sy, CCTK_REAL INOUT sz, \
+                           CCTK_REAL INOUT sc, CCTK_REAL IN Bconsx, CCTK_REAL IN Bconsy, CCTK_REAL IN Bconsz, \
+			   CCTK_REAL INOUT rho, \
+                           CCTK_REAL INOUT velx, CCTK_REAL INOUT vely, CCTK_REAL INOUT velz, \
+                           CCTK_REAL INOUT epsilon, CCTK_REAL INOUT pressure, \
+                           CCTK_REAL OUT Bvecx, CCTK_REAL OUT Bvecy, CCTK_REAL OUT Bvecz, \
+                           CCTK_REAL OUT Bvecsq, \
+                           CCTK_REAL INOUT w_lorentz, \
+                           CCTK_REAL IN gxx, CCTK_REAL IN gxy, CCTK_REAL IN gxz, \
+                           CCTK_REAL IN gyy, CCTK_REAL IN gyz, CCTK_REAL IN gzz, \
+                           CCTK_REAL IN uxx, CCTK_REAL IN uxy, CCTK_REAL IN uxz, \
+                           CCTK_REAL IN uyy, CCTK_REAL IN uyz, CCTK_REAL IN uzz, \
+                           CCTK_REAL IN det, \
+                           CCTK_INT OUT epsnegative, \
+                           CCTK_REAL OUT retval)
+
+USES FUNCTION SpatialDet
+USES FUNCTION Prim2ConPoly
+USES FUNCTION Prim2ConGen
+USES FUNCTION Prim2ConPolyM
+USES FUNCTION Prim2ConGenM
+USES FUNCTION Prim2ConGenM_hot
+USES FUNCTION Con2PrimPoly
+USES FUNCTION Con2PrimGen
+USES FUNCTION Con2PrimGenM
+USES FUNCTION Con2PrimGenMee
+USES FUNCTION Con2PrimPolyM
+
+CCTK_INT FUNCTION EOS_Omni_GetHandle(CCTK_STRING IN name)
+USES FUNCTION EOS_Omni_GetHandle
+
+
+void FUNCTION EOS_Omni_press(CCTK_INT IN eoshandle,      \
+                             CCTK_INT IN havetemp,       \
+			     CCTK_REAL IN rf_precision,  \
+                             CCTK_INT IN npoints,        \
+                             CCTK_REAL IN ARRAY rho,     \
+                             CCTK_REAL INOUT ARRAY eps,  \
+                             CCTK_REAL INOUT ARRAY temp, \
+                             CCTK_REAL IN ARRAY ye,      \
+                             CCTK_REAL OUT ARRAY press,  \
+                             CCTK_INT OUT ARRAY keyerr,  \
+                             CCTK_INT OUT anyerr)
+
+USES FUNCTION EOS_Omni_press
+
+void FUNCTION EOS_Omni_EpsFromPress(CCTK_INT IN eoshandle,      \
+                             CCTK_INT IN havetemp,              \
+			     CCTK_REAL IN rf_precision,         \
+                             CCTK_INT IN npoints,               \
+                             CCTK_REAL IN ARRAY rho,            \
+                             CCTK_REAL INOUT ARRAY eps,         \
+                             CCTK_REAL INOUT ARRAY temp,        \
+                             CCTK_REAL IN ARRAY ye,             \
+                             CCTK_REAL IN ARRAY press,          \
+                             CCTK_REAL OUT ARRAY xeps,          \
+                             CCTK_INT OUT ARRAY keyerr,         \
+                             CCTK_INT OUT anyerr)
+
+USES FUNCTION EOS_Omni_EpsFromPress
+
+CCTK_INT FUNCTION             \
+    MultiPatch_MapIsCartesian \
+        (CCTK_INT IN map)
+USES FUNCTION MultiPatch_MapIsCartesian
+
+CCTK_INT FUNCTION                         \
+    GetMap                                \
+        (CCTK_POINTER_TO_CONST IN cctkGH)
+USES FUNCTION GetMap
+
+protected:
+
+CCTK_REAL simple_wave_grid_functions TYPE=GF TIMELEVELS=1 tags='checkpoint="no"'
+{
+  simple_tmp
+  c_s
+} "1D arrays for the simple-wave routine"
+
+CCTK_REAL simple_wave_scalars TYPE=scalar
+{
+     simple_rho_0
+     simple_eps_0
+} "values at v=0"
+
+CCTK_REAL simple_wave_output TYPE=GF TIMELEVELS=1 tags='checkpoint="no"'
+{
+  simple_rho
+  simple_eps
+#  simple_entropy
+} "output variables for the simple-wave routine"
+
+private:
+
+CCTK_INT GRHydro_init_data_reflevel type = SCALAR tags='checkpoint="no"' "Refinement level GRHydro is working on right now"

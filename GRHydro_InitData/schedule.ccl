@@ -1,0 +1,283 @@
+# Schedule definitions for thorn GRHydro_Init_Data
+
+schedule GRHydro_InitData_CheckParameters  AT CCTK_PARAMCHECK
+{
+  LANG: C
+} "Check parameters"
+
+if (CCTK_Equals(initial_hydro,"monopole")) {
+  schedule GRHydro_MonopoleM in HydroBase_Initial
+    {
+      LANG: Fortran
+    } "Monopole initial data"
+}
+
+if (CCTK_Equals(initial_hydro,"rotor")) {
+  schedule GRHydro_RotorM in HydroBase_Initial
+    {
+      LANG: Fortran
+    } "MHD rotor initial data"
+}
+
+if (CCTK_Equals(initial_hydro,"advectedloop")) {
+  schedule GRHydro_AdvectedLoopM in HydroBase_Initial
+    {
+      LANG: Fortran
+    } "MHD advected loop initial data"
+}
+
+if (CCTK_Equals(initial_hydro,"alfvenwave")) {
+  schedule GRHydro_AlfvenWaveM in HydroBase_Initial
+    {
+      LANG: Fortran
+    } "Circularly polarized Alfven wave initial data"
+}
+
+if (CCTK_Equals(initial_hydro,"shocktube_hot")) {
+    schedule GRHydro_shocktube_hot in HydroBase_Initial AFTER (HydroBase_Y_e_one,HydroBase_Zero)
+    {
+      LANG: Fortran
+    } "Hot Shocktube initial data"
+}
+
+if (CCTK_Equals(initial_hydro,"shocktube")) {
+  if(CCTK_Equals(initial_Bvec,"shocktube"))
+  {
+    schedule GRHydro_shocktubeM in HydroBase_Initial
+    {
+      LANG: Fortran
+    } "Shocktube initial data - MHD version"
+
+    if(CCTK_Equals(shocktube_type,"diagshock")) 
+    {
+      if(clean_divergence){
+        schedule GRHydro_Diagshock_BoundaryM IN ApplyBCs AFTER BoundaryConditions AFTER Boundary::Boundary_ClearSelection
+        {
+          LANG: Fortran
+          SYNC: GRHydro::dens, GRHydro::tau, GRHydro::scon, GRHydro::Bcons, GRHydro::psidc
+        } "Diagonal shock boundary conditions"
+      } else {
+        schedule GRHydro_Diagshock_BoundaryM IN ApplyBCs AFTER BoundaryConditions AFTER Boundary::Boundary_ClearSelection
+        {
+          LANG: Fortran
+          SYNC: GRHydro::dens, GRHydro::tau, GRHydro::scon, GRHydro::Bcons
+        } "Diagonal shock boundary conditions"
+      }
+    }
+
+    if(CCTK_Equals(shocktube_type,"diagshock2d")) 
+    {
+        schedule GRHydro_Diagshock2D_BoundaryM IN ApplyBCs AFTER BoundaryConditions AFTER Boundary::Boundary_ClearSelection
+        {
+          LANG: Fortran
+        } "2-D Diagonal shock boundary conditions"
+    }
+
+#    if(CCTK_Equals(shocktube_type,"diagshock2d")) 
+#    {
+#      if(clean_divergence){
+#        schedule GRHydro_Diagshock2D_BoundaryM IN ApplyBCs AFTER BoundaryConditions AFTER Boundary::Boundary_ClearSelection
+#        {
+#          LANG: Fortran
+#          SYNC: GRHydro::dens, GRHydro::tau, GRHydro::scon, GRHydro::Bcons, GRHydro::psidc
+#        } "2-D Diagonal shock boundary conditions"
+#      } else {
+#        schedule GRHydro_Diagshock2D_BoundaryM IN ApplyBCs AFTER BoundaryConditions AFTER Boundary::Boundary_ClearSelection
+#        {
+#          LANG: Fortran
+#          SYNC: GRHydro::dens, GRHydro::tau, GRHydro::scon, GRHydro::Bcons
+#        } "2-D Diagonal shock boundary conditions"
+#      }
+#    }
+
+  } else {
+    schedule GRHydro_shocktube in HydroBase_Initial
+    {
+      LANG: Fortran
+    } "Shocktube initial data"
+
+  }
+}
+
+if (CCTK_Equals(initial_hydro,"cylexp")) {
+  schedule GRHydro_CylindricalExplosionM in HydroBase_Initial
+    {
+      LANG: Fortran
+    } "Cylindrical Explosion initial data - MHD-only"
+}
+
+if (CCTK_Equals(initial_data,"con2primtest")) {
+  STORAGE:GRHydro_init_data_reflevel
+  schedule GRHydro_Init_Data_RefinementLevel IN HydroBase_Initial BEFORE GRHydro_con2primtest
+  {
+    LANG: Fortran
+  } "Calculate current refinement level"
+
+  schedule GRHydro_con2primtest in HydroBase_Initial
+  {
+    LANG: Fortran
+  } "Testing the conservative to primitive solver"
+}
+
+if (CCTK_Equals(initial_data,"con2prim2con_test")) {
+  STORAGE:GRHydro_init_data_reflevel
+  schedule GRHydro_Init_Data_RefinementLevel IN HydroBase_Initial BEFORE c2p2c_call
+  {
+    LANG: Fortran
+  } "Calculate current refinement level"
+
+  if(CCTK_Equals(Bvec_evolution_method,"GRHydro"))
+  {
+    schedule c2p2cM in HydroBase_Initial AS c2p2c_call
+    {
+      LANG: Fortran
+    } "Testing conservative to primitive to conservative - MHD version"
+  } else {
+    schedule c2p2c in HydroBase_Initial AS c2p2c_call
+    {
+      LANG: Fortran
+    } "Testing conservative to primitive to conservative"
+  }
+}
+
+if (CCTK_Equals(initial_data,"prim2con2prim_test")) {
+  STORAGE:GRHydro_init_data_reflevel
+  schedule GRHydro_Init_Data_RefinementLevel IN HydroBase_Initial BEFORE p2c2p_call
+  {
+    LANG: Fortran
+  } "Calculate current refinement level"
+
+  if(CCTK_Equals(Bvec_evolution_method,"GRHydro"))
+  {
+    schedule p2c2pM in HydroBase_Initial AS p2c2p_call
+    {
+      LANG: Fortran
+    } "Testing primitive to conservative to primitive - MHD version"
+  } else {
+    schedule p2c2p in HydroBase_Initial AS p2c2p_call
+    {
+      LANG: Fortran
+    } "Testing primitive to conservative to primitive"
+  }
+}
+
+if (CCTK_Equals(initial_data,"prim2con2prim_polytype_test")) {
+  STORAGE:GRHydro_init_data_reflevel
+  schedule GRHydro_Init_Data_RefinementLevel IN HydroBase_Initial BEFORE p2c2p_call
+  {
+    LANG: Fortran
+  } "Calculate current refinement level"
+
+  if(CCTK_Equals(Bvec_evolution_method,"GRHydro"))
+  {
+    schedule p2c2pM_polytype in HydroBase_Initial AS p2c2p_call
+    {
+      LANG: Fortran
+    } "Testing primitive to conservative to primitive - MHD polytype version"
+  }
+}
+
+if (CCTK_Equals(initial_data,"reconstruction_test")) {
+  schedule GRHydro_reconstruction_test in HydroBase_Initial
+  {
+    LANG: Fortran
+    STORAGE: GRHydro_prim_bext
+    STORAGE: GRHydro_scalars
+    OPTIONS: global loop-local
+  } "Testing the reconstruction"
+}
+
+if (CCTK_Equals(initial_hydro,"only_atmo")) {
+  schedule GRHydro_Only_Atmo in HydroBase_Initial
+  {
+    LANG: Fortran
+  } "Only atmosphere as initial data"
+}
+
+if (CCTK_Equals(initial_hydro,"read_conformal")) {
+  schedule GRHydro_ReadConformalData in HydroBase_Initial
+  {
+    LANG: Fortran
+  } "Set the missing quantities, after reading in from file initial data from conformally-flat codes (Garching)"
+}
+
+if (CCTK_Equals(initial_hydro,"simple_wave")) {
+  STORAGE: simple_wave_grid_functions
+  STORAGE: simple_wave_scalars
+  schedule GRHydro_SimpleWave in HydroBase_Initial
+  {
+    LANG: Fortran
+  } "Set initial data from Anile Miller Motta, Phys.Fluids. 26, 1450 (1983)"
+
+  STORAGE: simple_wave_output
+  schedule GRHydro_SimpleWave_Analysis AT CCTK_ANALYSIS AFTER GRHydro_Entropy
+  {
+    LANG: Fortran
+  } "Compute some output variables for the Simple Wave"
+
+
+}
+
+if (CCTK_EQUALS(initial_hydro, "hydro_bondi_solution_iso"))
+{
+  SCHEDULE GRHydro_Bondi_Iso IN HydroBase_Initial AFTER HydroBase_ExcisionMaskSetup
+  {
+    LANGUAGE: Fortran
+  } "setup GRHydro vars for the hydrodynamic Bondi solution"
+}
+
+if (CCTK_EQUALS(initial_hydro, "magnetized_bondi_solution_iso"))
+{
+  SCHEDULE GRHydro_BondiM_Iso IN HydroBase_Initial AFTER HydroBase_ExcisionMaskSetup
+  {
+    LANGUAGE: Fortran
+  } "setup GRHydro vars for the magnetized Bondi solution"
+}
+
+if (CCTK_EQUALS(initial_hydro, "hydro_bondi_solution"))
+{
+  SCHEDULE GRHydro_Bondi IN HydroBase_Initial AFTER HydroBase_ExcisionMaskSetup
+  {
+    LANGUAGE: C
+  } "setup GRHydro vars for the hydrodynamic Bondi solution"
+}
+
+if (CCTK_EQUALS(initial_hydro, "magnetized_bondi_solution"))
+{
+  SCHEDULE GRHydro_BondiM IN HydroBase_Initial AFTER HydroBase_ExcisionMaskSetup
+  {
+    LANGUAGE: C
+  } "setup GRHydro vars for the magnetized Bondi solution"
+}
+
+if(bondi_evolve_only_annulus) {
+SCHEDULE GRHydro_BondiM_Range IN HydroBase_Con2Prim BEFORE Con2Prim
+{
+  LANG: C
+} "force analytic solution outside anulus"
+}
+
+if(bondi_overwrite_boundary ) {
+# this is a terrible HACK. We really should at least schedule ourselves in
+# Boundaries and look at cctk_bbox and the symmetry flags
+# by now Cactus is convenient CCTK_LOOP macros for this...
+SCHEDULE GRHydro_BondiM_Boundary IN HydroBase_Boundaries BEFORE HydroBase_Select_Boundaries
+{
+  LANG: C
+} "force analytic solution in boundaries"
+}
+
+if (CCTK_EQUALS(initial_Bvec, "poloidalmagfield") || CCTK_EQUALS(initial_Avec, "poloidalmagfield"))
+{
+#  SCHEDULE GRHydro_PoloidalMagFieldM AT CCTK_INITIAL AFTER IN HydroBase_Initial AFTER rnsid_init AFTER TOV_Initial_Data after CCCC_StarMapper_InitialData
+#  SCHEDULE GRHydro_PoloidalMagFieldM AT CCTK_POSTINITIAL 
+  SCHEDULE GRHydro_PoloidalMagFieldM AT CCTK_INITIAL AFTER HydroBase_Initial BEFORE GRHydroTransformPrimToLocalBasis
+  {
+    LANGUAGE: Fortran
+  } "Set up a poloidal magnetic field. It expects the other fluid variables already to be set, as for example in the TOV solution"
+#  SCHEDULE group HydroBase_Boundaries IN HydroBase_Initial AFTER GRHydro_PoloidalMagFieldM 
+  SCHEDULE group HydroBase_Boundaries IN CCTK_INITIAL AFTER GRHydro_PoloidalMagFieldM BEFORE GRHydroTransformPrimToLocalBasis
+  {
+  } "Call boundary conditions after magnetic field initial data setup"
+}
+

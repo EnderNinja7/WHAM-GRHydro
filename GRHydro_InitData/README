@@ -1,0 +1,14 @@
+Cactus Code Thorn GRHydro_Init_Data  
+Author(s)    : Luca Baiotti
+               Ian Hawke
+               Scott Hawley
+               Frank Löffler
+               Christian David Ott
+Maintainer(s): CIGR developers team
+Licence      : GPLv2+
+--------------------------------------------------------------------------
+
+1. Purpose
+
+Provides simple initial data (shock tubes, ...) for the GRHydro code.
+

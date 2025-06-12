@@ -1,0 +1,101 @@
+###
+ActiveThorns = "time MoL cartgrid3d carpetioascii ioutil Fortran boundary  hydrobase grhydro grhydro_initdata nanchecker eos_omni CoordBase  LoopControl CarpetLib Carpet CarpetIOHDF5 CarpetReduce spacemask ADMCoupling ADMMacros ADMBASE STATICCONFORMAL TMUNUBASE SymBase localreduce CarpetIOBasic initbase GRHydro_InitData NaNChecker"
+
+NaNChecker::check_every   =  1
+NaNChecker::check_vars = "ADMBase::curv ADMBase::metric ADMBase::lapse ADMBase::shift HydroBase::rho HydroBase::eps HydroBase::press HydroBase::vel HydroBase::w_lorentz HydroBase::Bvec"
+NaNChecker::action_if_found   =  "terminate"
+#NaNChecker::action_if_found  =  "abort"
+#NaNChecker::action_if_found = "just warn" #"terminate", "just warn", "abort"
+#NaNChecker::check_after=0
+
+#This is a hack. ghost_size should be the same as grhydro::grhydro_stencil.
+
+driver::ghost_size=3
+grhydro::grhydro_stencil=3
+
+time::dtfac = 0.01
+#time::dtfac = 0.1
+#time::dtfac = 0.25
+#time::dtfac = 0.8
+
+methodoflines::ODE_Method = "rk2"
+methodoflines::MoL_Intermediate_Steps=2
+
+ADMBase::initial_shift = "zero"
+#admbase::initial_data="prim2con2prim_test"
+#GRHydro_InitData::Bx_init=1.0    # Strong field
+GRHydro_InitData::Bx_init=0.1   # Intermediate strength
+#GRHydro_InitData::Bx_init=0.01   # Weak strength
+#GRHydro_InitData::By_init=0.12
+#GRHydro_InitData::Bz_init=0.14
+HydroBase::initial_hydro="cylexp"
+GRHydro_InitData::shocktube_type="xshock"
+#GRHydro_InitData::shock_case="Balsara1"
+
+HydroBase::timelevels=2
+HydroBase::evolution_method="grhydro"
+HydroBase::Bvec_evolution_method="grhydro"
+
+SpaceMask::use_mask="yes"
+EOS_Omni::gl_gamma=1.333333333333333333333
+grhydro::track_divB="yes"
+grhydro::clean_divergence="yes"
+#grhydro::clean_divergence="no"
+grhydro::psidcspeed="light speed"
+grhydro::kap_dc=1.0
+#grhydro::ch_dc=1.0
+#grhydro::cp_dc=12.0
+grhydro::recon_method="tvd"
+#grhydro::recon_method="ppm"
+grhydro::method_type="RSA FV"
+grhydro::recon_vars="primitive"
+grhydro::riemann_solver="HLLE"
+grhydro::tvd_limiter="vanleerMC"
+grhydro::bound="flat"
+grhydro::grhydro_eos_type = "General"
+grhydro::grhydro_eos_table="Ideal_Fluid"
+grhydro::Grhydro_MaxNumConstrainedVars=13
+grhydro::GRHydro_MaxNumEvolvedVars=10
+
+grid::type = "BySpacing"
+grid::domain = "full"
+grid::dxyz = 0.06
+#grid::dxyz = 0.03
+
+#driver::global_nx = 400
+#driver::global_ny = 400
+driver::global_nx = 200
+driver::global_ny = 200
+driver::global_nz = 10
+
+Cactus::terminate="time"
+Cactus::cctk_final_time = 4.
+#cactus::cctk_itlast = 40
+#cactus::cctk_itlast = 200
+#cactus::cctk_itlast = 2
+
+IO::out_dir = $parfile
+CarpetIOBasic::outInfo_vars="hydrobase::rho"
+CarpetIOBasic::outInfo_every=1
+
+#CarpetIOASCII::out1D_criterion = "time"
+#CarpetIOASCII::out1D_dt = 0.01
+#CarpetIOASCII::out1D_d=no
+#CarpetIOASCII::out1D_vars = "HydroBase::rho HydroBase::press HydroBase::eps  HydroBase::vel grhydro::dens grhydro::tau grhydro::scon HydroBase::Bvec"
+
+#CarpetIOHDF5::out_every = 1
+#CarpetIOHDF5::out_vars  = "HydroBase::rho HydroBase::press HydroBase::eps  HydroBase::vel HydroBase::w_lorentz  grhydro::dens grhydro::divB grhydro::tau grhydro::scon HydroBase::Bvec"
+##CarpetIOHDF5::out_vars  = "HydroBase::rho HydroBase::press HydroBase::eps  HydroBase::vel HydroBase::w_lorentz grhydro::psidc grhydro::dens grhydro::divB grhydro::tau grhydro::scon HydroBase::Bvec"
+##CarpetIOHDF5::out_vars  = "HydroBase::rho HydroBase::press HydroBase::eps  HydroBase::vel HydroBase::w_lorentz  grhydro::dens grhydro::tau grhydro::scon "
+
+#CarpetIOHDF5::out2D_every                    = 1
+CarpetIOHDF5::out2D_every                    = 10
+CarpetIOHDF5::out2D_xy                       = "yes"
+CarpetIOHDF5::out2D_xz                       = "no"
+CarpetIOHDF5::out2D_yz                       = "no"
+CarpetIOHDF5::out2D_xyplane_z                = 0.0
+#CarpetIOHDF5::out2D_vars  = "HydroBase::rho HydroBase::press HydroBase::eps  HydroBase::vel HydroBase::w_lorentz  grhydro::dens grhydro::divB grhydro::tau grhydro::scon HydroBase::Bvec"
+CarpetIOHDF5::out2D_vars  = "HydroBase::rho HydroBase::press HydroBase::eps  HydroBase::vel HydroBase::w_lorentz grhydro::psidc grhydro::dens grhydro::divB grhydro::tau grhydro::scon HydroBase::Bvec"
+#CarpetIOHDF5::out2D_vars  = "HydroBase::rho HydroBase::press HydroBase::eps  HydroBase::vel HydroBase::w_lorentz  grhydro::dens grhydro::tau grhydro::scon "
+
+

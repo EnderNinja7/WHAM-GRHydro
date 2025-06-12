@@ -1,0 +1,152 @@
+\documentclass{article}
+
+\begin{document}
+
+\title{GRHydro\_Init\_Data}
+\author{Luca Baiotti, Ian Hawke, Scott Hawley}
+\date{24/07/2008}
+\maketitle
+
+% Do not delete next line
+% START CACTUS THORNGUIDE
+
+\abstract{GRHydro\_Init\_Data - some initial data for {\tt GRHydro}}
+
+\section{Introduction}
+\label{sec:intro}
+
+This thorn generates some initial data for the GRHydro code. There are more (and more physically
+interesting) initial-data codes in other thorns. As with the GRHydro code itself, please feel free to
+add, alter or extend any part of this code. However please keep the documentation up to date (even,
+or especially, if it's just to say what doesn't work).
+
+Currently this thorn contains a few tests that should really be test suites, some shock-tube
+initial data, 
+%some (largely untested and unmaintained; please use the TOV initial-data codes in the
+%dedicated thorns) TOV initial data solver routines, 
+a routine to set atmopshere everywhere on the
+grid (for tests), a routine to read initial data from files (not very generic, tough) and a routine
+to set up the simple-wave initial data .
+
+
+\subsection{Tests}
+\label{sec:tests}
+
+There are tests of the TVD reconstruction routine and of the routines
+that convert between conservative and primitive variables. These all
+just produce output to the screen or to {\tt fort.*} files. The
+reconstruction test outputs the function to be reconstructed and the
+boundary-extended values. The conservative-to-primitive test just
+outputs the two sets of variables. If you haven't altered the code an if you set
+\begin{verbatim}
+eos_polytrope::eos_gamma =   2.0
+eos_polytrope::eos_k     = 100.0
+\end{verbatim}
+(which are the defaults), the output should be
+% I checked that in 2008 the number were still right (but one gets them with eos_gamma=2.0 and 
+% eos_k ~ 0.1865) and committed the new ones for the default eos parameter values.
+
+\begin{verbatim}
+    primitive variables: 
+    rho   :   1.29047172182043     
+    velx  :   9.902578465178671E-004
+    vely  :   9.902578465178671E-004
+    velz  :   9.902578465178671E-004
+    eps   :   0.374770481293314     
+    press : 166.531726481819     
+    w_lor :   1.00000147091915  
+\end{verbatim}
+The conservative to primitive to conservative test outputs the initial
+and final data which should agree.
+
+\subsection{Shocktube tests}
+\label{sec:shock}
+
+There are three possible shock-tube problems, referred to as {\tt Sod},
+{\tt Simple} and {\tt Blast}, with initial data
+\begin{center}
+  \begin{tabular}[c]{|c|c|c|c|c|c|c|}
+    \hline Type & $\rho_{_L}$ & $v^i_{_L}$ & $\varepsilon_{_L}$ & $\rho_{_R}$ & $v^i_{_R}$
+    & $\varepsilon_{_R}$ \\ \hline
+    Sod & 1 & 0 & 1.5 & 0.125 & 0 & 0.15 \\
+    Simple & 10 & 0 & 20 & 1 & 0 & $10^{-6}$ \\
+    Blast & 1 & 0 & 1500 & 1 & 0 & $1.5\cdot 10^{-2}$ \\ \hline
+  \end{tabular}
+\end{center}
+The shock shape can be planar (along each axis or along the main diagonal) or spherical and the
+position of the plane or of the center of the sphere can be chosen though parameters.
+If a diagonal shock is selected, the initial data is set to either the left or right
+state depending on where the centre of the cell falls. Cleverer
+routines that weight the initial data to avoid ``staircasing'' may be
+added if there is demand. For more discussion on shock tubes
+see~\cite{livrevsrrfd}. 
+
+
+%\subsection{TOV stars}
+%\label{sec:tov}
+%
+%The Tolman-Oppenheimer-Volkoff solution is a spherically symmetric
+%fluid ball matched to a Schwarzschild exterior. Typically an
+%atmosphere is placed in the exterior to stop the equations of motion
+%of the fluid being singular. Given an equation of state, the central
+%density $\rho_c$ is specified. Then the solution is found by
+%integrating the radial equations
+%\begin{eqnarray}
+%  \label{eq:tov}
+%  \frac{\partial P(r)}{\partial r} & = & - \frac{(\rho + \rho \epsilon
+%  + P)(m + 4\pi r^3 P)}{r (r - 2m)} \\
+%  \frac{\partial (\log \alpha (r))}{\partial r} & = & \frac{m + 4 \pi
+%  r^3 P}{r (r - 2m)} \\
+%  \frac{\partial m(r)}{\partial r} & = & 4 \pi r^2 (\rho + \rho
+%  \epsilon) \\ 
+%  \gamma_{rr}(r) & = & \left( 1-\frac{2m(r)}{r} \right)^{-1},
+%\end{eqnarray}
+%where $m$ is the mass energy contained in a sphere radius $r$,
+%$\gamma_{ij}$ the 3-metric, and $\alpha$ the lapse in standard
+%Schwarzschild like coordinates. For more details see~\cite{hydro1}. 
+%
+%The routines here, written by Scott Hawley, use the LSODA library to
+%integrate the equations and then interpolate onto the Cartesian
+%grid. 
+%
+%This routine is untested and unmaintained: please use other thorns providing TOV initial data. They
+%are located in dedicated thorns of this arrangement.
+
+\subsection{Only atmosphere}
+\label{sec:only-atmo}
+
+For testing purposes, this routine sets all the points to the values of the atmosphere.
+
+
+\subsection{Simple wave}
+\label{sec:simple-wave}
+
+This routine testes initial data for a simple wave with sinusoidal initial function for the velocity,
+as described in Anile, Miller, Motta, {\it Formation and damping of relativistic strong
+  shocks},Phys. Fluids {\bf 26}, 1450 (1983).
+
+
+
+\begin{thebibliography}{1}
+
+\bibitem{livrevsrrfd}
+J.~M. Mart{\'{\i}} and E.~M{\"u}ller.
+\newblock Numerical hydrodynamics in {S}pecial {R}elativity.
+\newblock {\em Living Rev. Relativity}, {\bf 3}, 1999.
+\newblock [Article in online journal], cited on 31/7/01,
+  http://www.livingreviews.org/Articles/Volume2/1999-3marti/index.html.
+
+\bibitem{hydro1}
+J.~A. Font, M. Miller, W. Suen and M. Tobias.
+\newblock Three Dimensional Numerical General Relativistic
+Hydrodynamics I: Formulations, Methods, and Code Tests
+\newblock {\em Phys. Rev.}, {\bf D61}, 044011, 2000.
+
+\end{thebibliography}
+
+% Do not delete next line
+% END CACTUS THORNGUIDE
+
+\end{document}
+
+

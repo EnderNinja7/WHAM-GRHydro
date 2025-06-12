@@ -1,0 +1,66 @@
+# Parameter definitions for thorn LegoExcision
+# $Header$
+
+KEYWORD fixed_excision "Excise a fixed region?"
+{
+  "sphere" :: "A sphere about the origin of a given radius"
+  "cube"   :: "A cube about the origin with a given corner"
+  "none"   :: "No fixed excision"
+} "none"
+
+BOOLEAN touch_excision_at_startup "touch the excision mask at startup?"
+{
+} "yes"
+
+INT num_fixed_regions "Number of fixed excision regions"
+{
+  0:* :: ""
+} 1
+
+
+
+# First fixed excision region
+
+REAL fixed_size "The size (radius or corner location) of the fixed region"
+{
+  0:* :: "Positive"
+} 1.0
+
+REAL fixed_origin_x "The x coordinate of the centre of the fixed region"
+{
+  *:* :: ""
+} 0.0
+
+REAL fixed_origin_y "The y coordinate of the centre of the fixed region"
+{
+  *:* :: ""
+} 0.0
+
+REAL fixed_origin_z "The z coordinate of the centre of the fixed region"
+{
+  *:* :: ""
+} 0.0
+
+
+
+# Second fixed excision region
+
+REAL fixed2_size "The size (radius or corner location) of the second fixed region"
+{
+  0:* :: "Positive"
+} 1.0
+
+REAL fixed2_origin_x "The x coordinate of the centre of the second fixed region"
+{
+  *:* :: ""
+} 0.0
+
+REAL fixed2_origin_y "The y coordinate of the centre of the second fixed region"
+{
+  *:* :: ""
+} 0.0
+
+REAL fixed2_origin_z "The z coordinate of the centre of the second fixed region"
+{
+  *:* :: ""
+} 0.0

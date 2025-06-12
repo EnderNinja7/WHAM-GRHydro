@@ -1,0 +1,218 @@
+#==============================================================================
+# This is a par file for two balls of dust that collapse and merge.
+#==============================================================================
+
+
+ActiveThorns = "admanalysis admbase admcoupling admmacros spacemask StaticConformal  boundary time cartgrid3d ioutil iobasic nanchecker CoordBase LocalReduce MoL Carpet CarpetInterp CarpetIOASCII CarpetLib CarpetReduce CarpetRegrid2 CarpetTracker CarpetMask CarpetIOHDF5 CarpetIOScalar InitBase SymBase LoopControl HydroBase tmunubase SphericalSurface"
+
+#------------------------------------------------------------------------------
+
+# Run parameters
+#------------------------------------------------------------------------------
+
+# Grid
+
+mol::ode_method                        = "RK4"
+mol::mol_intermediate_steps            = 4
+mol::mol_num_scratch_levels            = 1
+
+CoordBase::domainsize       = "minmax"
+CoordBase::xmin             =  0.
+CoordBase::ymin             =  0.
+CoordBase::zmin             =  0.
+CoordBase::xmax             =  256.0
+CoordBase::ymax             =  256.0
+CoordBase::zmax             =  256.0
+CoordBase::spacing          = "gridspacing"  # "gridspacing" or "numcells"
+#CoordBase::ncells_x         = 60
+#CoordBase::ncells_y         = 60
+#CoordBase::ncells_z         = 60
+CoordBase::dx   =   8.0  # dx or ncells_x
+CoordBase::dy   =   8.0  # dy or ncells_y
+CoordBase::dz   =   8.0  # dz or ncells_z
+#CoordBase::dx   =   2.0  # dx or ncells_x
+#CoordBase::dy   =   2.0  # dy or ncells_y
+#CoordBase::dz   =   2.0  # dz or ncells_z
+
+CoordBase::boundary_size_x_lower=3
+CoordBase::boundary_size_y_lower=3
+CoordBase::boundary_size_z_lower=3
+#CoordBase::boundary_size_x_upper        = 3
+#CoordBase::boundary_size_y_upper        = 3
+#CoordBase::boundary_size_z_upper        = 3
+
+CoordBase::boundary_shiftout_x_lower    = 1
+CoordBase::boundary_shiftout_y_lower    = 1
+CoordBase::boundary_shiftout_z_lower    = 1
+CoordBase::boundary_shiftout_x_upper    = 0
+CoordBase::boundary_shiftout_y_upper    = 0
+CoordBase::boundary_shiftout_z_upper    = 0
+
+
+CartGrid3D::type            = "coordbase"
+CartGrid3D::domain          = "full"
+CartGrid3D::avoid_origin    = "no"
+#CartGrid3D::avoid_origin    = "yes"
+#CartGrid3D::avoid_originx   = "yes"
+#CartGrid3D::avoid_originy   = "yes"
+#CartGrid3D::avoid_originz   = "yes"
+
+ActiveThorns = "Slab ReflectionSymmetry RotatingSymmetry90"
+
+ReflectionSymmetry::reflection_x="no"
+ReflectionSymmetry::reflection_y="no"
+ReflectionSymmetry::reflection_z="yes"
+ReflectionSymmetry::avoid_origin_x="no"
+ReflectionSymmetry::avoid_origin_y="no"
+ReflectionSymmetry::avoid_origin_z="no"
+#ReflectionSymmetry::avoid_origin_upper_x="no"
+#ReflectionSymmetry::avoid_origin_upper_y="no"
+#ReflectionSymmetry::avoid_origin_upper_z="no"
+
+Driver::ghost_size                        = 3
+
+# General Carpet parameters:
+Carpet::domain_from_coordbase    = "yes"
+Carpet::enable_all_storage       = "no"
+Carpet::use_buffer_zones         = "yes"
+Carpet::schedule_barriers        = "no"
+
+Carpet::poison_new_timelevels    = "yes"
+Carpet::check_for_poison         = "no"
+#Carpet::poison_value             = 113 # git version only!
+
+Carpet::init_3_timelevels        = "no"
+Carpet::init_fill_timelevels     = "yes"
+
+CarpetLib::poison_new_memory         = "yes"
+CarpetLib::poison_value              = 114
+CarpetLib::check_bboxes              = "no"
+CarpetLib::interleave_communications = "yes"
+#CarpetLib::vary_tags                 = "yes" # git version only!
+CarpetLib::combine_sends             = "yes"
+#CarpetLib::reduce_mpi_waitall        = "yes" # git version only!
+
+CarpetInterp::tree_search = "yes"
+CarpetInterp::check_tree_search = "no"
+
+CarpetRegrid2::freeze_unaligned_levels = "yes"
+CarpetRegrid2::snap_to_coarse          = "yes"
+CarpetRegrid2::symmetry_rotating90 = "yes"
+
+# System specific Carpet parameters:
+Carpet::max_refinement_levels    = 9
+Carpet::prolongation_order_space = 3
+Carpet::prolongation_order_time  = 2
+
+CarpetRegrid2::regrid_every = 512000
+CarpetRegrid2::num_centres  = 1
+
+CarpetRegrid2::num_levels_1 = 9
+#CarpetRegrid2::num_levels_1 = 1
+CarpetRegrid2::position_x_1 = 0.0
+CarpetRegrid2::position_y_1 = 0.0
+CarpetRegrid2::position_z_1 = 0.0
+CarpetRegrid2::radius_1[1]  =128.0 # 4
+CarpetRegrid2::radius_1[2]  = 64.0 # 2
+CarpetRegrid2::radius_1[3]  = 32.0 # 1
+CarpetRegrid2::radius_1[4]  = 16.0 # 0.5
+CarpetRegrid2::radius_1[5]  =  8.0 # 0.25
+CarpetRegrid2::radius_1[6]  =  4.0 # 0.125
+CarpetRegrid2::radius_1[7]  =  2.0 # 0.0625
+CarpetRegrid2::radius_1[8]  =  1.0 # 0.03125
+
+CarpetMask::excluded_surface       [0] = 0
+CarpetMask::excluded_surface_factor[0] = 1.0
+
+CarpetTracker::surface[0] = 0
+
+SphericalSurface::nsurfaces = 1
+SphericalSurface::maxntheta = 39
+SphericalSurface::maxnphi = 76
+
+SphericalSurface::ntheta      [0] = 39
+SphericalSurface::nphi        [0] = 76
+SphericalSurface::nghoststheta[0] = 2
+SphericalSurface::nghostsphi  [0] = 2
+
+
+#---------------------------------------------------------------------------
+cactus::terminate="time"
+#Cactus::cctk_final_time = 20.
+Cactus::cctk_final_time = 1.
+
+time::dtfac                        = .01
+
+ActiveThorns = "GRHydro grhydro_initdata EOS_Omni"
+
+ActiveThorns = "IDAnalyticBH"
+
+ADMBase::initial_data="schwarzschild"
+ADMBase::initial_lapse="schwarzschild"
+ADMBase::initial_shift="kerr"
+IDAnalyticBH::mass = 1.
+IDAnalyticBH::a_Kerr = 0.
+IDAnalyticBH::epsilon = 1.0e-10
+
+SpaceMask::use_mask = "yes"
+
+HydroBase::initial_hydro="hydro_bondi_solution"
+grhydro_initdata::mdot_sonicpt_bondi = 1.e-6
+grhydro_initdata::r_sonicpt_bondi    = 8.1
+grhydro_initdata::bondi_coordinates  = "Kerr-Schild"
+grhydro_initdata::bondi_rmax[0] = 30.
+grhydro_initdata::bondi_rmin[0] = 1e-10
+
+grhydro::riemann_solver            = "Marquina"
+grhydro::grhydro_eos_table="Ideal_Fluid"
+grhydro::grhydro_eos_type           = "General"
+grhydro::recon_method              = "ppm"
+grhydro::grhydro_stencil            = 3
+grhydro::bound                     = "none"
+Grhydro::rho_abs_min=1.0e-13
+Grhydro::initial_rho_abs_min=1.0e-13
+Grhydro::grhydro_atmo_tolerance=0.0001
+grhydro::Grhydro_MaxNumSandRVars    = 16
+Grhydro::initial_Gamma=1.666666666666667
+EOS_Omni::gl_gamma=1.666666666666667
+
+HydroBase::timelevels = 3
+HydroBase::evolution_method = "grhydro"
+
+admbase::metric_type                    = "Physical"
+
+#--- numerics
+
+boundary::radpower              = 2
+
+#------------------------------------------------------------------------------
+# Output
+#------------------------------------------------------------------------------
+#IO::out_dir                             = "data_bondi6"
+IO::out_dir                             = $parfile
+IO::out_fileinfo   			= "none"
+
+
+CarpetIOASCII::out1D_every                    = 64
+CarpetIOASCII::out1D_vars                     = "admbase::alp  admbase::metric  admbase::shift  hydrobase::rho hydrobase::eps hydrobase::press hydrobase::vel  hydrobase::w_lorentz"
+CarpetIOASCII::out1D_d=yes
+CarpetIOScalar::outScalar_vars = "admbase::alp hydrobase::rho hydrobase::eps hydrobase::press hydrobase::vel  grhydro::dens grhydro::tau grhydro::scon hydrobase::w_lorentz"
+CarpetIOScalar::outScalar_every = 10
+CarpetIOScalar::outScalar_reductions = "minimum maximum"
+
+#==============================================================================
+NaNChecker::check_every 	=	16
+NaNChecker::check_vars	 	=	"admbase::metric admbase::curv"
+NaNChecker::action_if_found	=	"abort"
+NaNChecker::check_after=10
+
+#CarpetIOHDF5::checkpoint = "yes"
+CarpetIOHDF5::out_every = 32
+CarpetIOHDF5::out_vars = "hydrobase::rho hydrobase::press hydrobase::eps hydrobase::vel hydrobase::w_lorentz admbase::metric admbase::alp admbase::shift"
+
+#IO::checkpoint_ID = "no"
+#IO::checkpoint_every = 1024
+#IO::checkpoint_keep=2
+#IO::checkpoint_on_terminate = "yes"
+
+#IO::recover = "auto"

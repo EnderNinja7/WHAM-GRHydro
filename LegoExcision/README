@@ -1,0 +1,11 @@
+Cactus Code Thorn LegoExcision
+Authors    : Miguel Alcubierre, Erik Schnetter, Deirdre Shoemaker
+CVS info   : $Header$
+--------------------------------------------------------------------------
+
+Purpose of the thorn:
+
+Excise a region of a grid-function according to a mask function and
+apply a boundary condition to the edges of the excised region.
+
+See ./doc/documentation.tex for usage notes. 

@@ -1,0 +1,28 @@
+# Schedule definitions for thorn LegoExcision
+# $Header$
+
+if (touch_excision_at_startup)
+{
+  schedule Lego_FixedSphere in CCTK_POSTINITIAL after MaskOne
+  {
+    LANG:Fortran
+    SYNC:SpaceMask::mask
+  } "Excise a fixed lego sphere"
+}
+
+schedule GROUP ApplyBCs as Lego_ApplyBCs in CCTK_POSTINITIAL after Lego_FixedSphere
+{
+} "Apply boundary conditions controlled by thorn Boundary"
+
+if (touch_excision_at_startup)
+{
+  schedule Lego_FixedSphere in CCTK_POSTREGRID after MaskOne
+  {
+    LANG:Fortran
+    SYNC:SpaceMask::mask
+  } "Excise a fixed lego sphere"
+}
+
+schedule GROUP ApplyBCs as Lego_ApplyBCs in CCTK_POSTREGRID after Lego_FixedSphere
+{
+} "Apply boundary conditions controlled by thorn Boundary"

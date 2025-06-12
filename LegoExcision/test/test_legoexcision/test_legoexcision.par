@@ -1,0 +1,65 @@
+!DESC "LegoExcision with AHFinder on schwarzschild BH"
+
+# Active thorns.
+
+activethorns = "LocalInterp Time CartGrid3D Boundary ADMBase CoordGauge SpaceMask ADMMacros ADMCoupling StaticConformal ADM_BSSN IDAnalyticBH IOBasic IOUtil IOASCII PUGH PUGHSlab PUGHreduce PUGHInterp AHFinder LegoExcision"
+
+# Grid.
+
+grid::type				= "byspacing"
+grid::dxyz				=  0.2
+grid::domain				= "octant"
+
+driver::global_nx			= 25
+driver::global_ny			= 25
+driver::global_nz			= 25
+
+cactus::cctk_itlast			= 5
+
+# Initial data.
+
+admbase::initial_data			= "schwarzschild"
+IDAnalyticBH::mass			= 4.0
+
+# Evolution.
+
+admbase::metric_type			= "static conformal"
+admbase::evolution_method		= "ADM_BSSN"
+
+# Excision.
+
+spacemask::use_mask			= "yes"
+
+adm_bssn::excise			= "yes"
+adm_bssn::excisiontype			= "lego"
+
+ahfinder::ahf_mask			= "weak"
+
+# Gauge.
+
+admbase::initial_lapse			= "one"
+admbase::lapse_evolution_method		= "geodesic"
+
+# AHFinder.
+
+ahfinder::ahf_active			= "yes"
+ahfinder::ahf_findevery			= 3
+ahfinder::ahf_gaussout			= "yes"
+
+ahfinder::ahf_phi			= "no"
+ahfinder::ahf_octant			= "high"
+
+ahfinder::ahf_lmax			= 0
+
+# Interpolation.
+
+ahfinder::interpolation_order		= 1
+
+# Output.
+
+IO::new_filename_scheme                 = "no"
+IO::out_dir				= "test_legoexcision"
+
+IO::out_every				= 1 
+IOASCII::out1D_vars			= "admbase::metric spacemask::emask"
+

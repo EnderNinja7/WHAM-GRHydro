@@ -1,0 +1,9 @@
+Cactus Code Thorn GRHydro_Refluxing
+Author(s)    : David Radice <dradice@caltech.edu>
+Maintainer(s): David Radice <dradice@caltech.edu>
+Licence      : GPL
+--------------------------------------------------------------------------
+
+1. Purpose
+
+Provide hydro fluxes to Refluxing thorn

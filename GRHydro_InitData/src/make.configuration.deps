@@ -1,0 +1,8 @@
+
+# the TOV solver uses lsoda, which comes with the odepack library
+# Currently the Cactus configure script doesn't check for this
+# Thus the user needs to set an environment variable, ODEPACK_DIR
+# -Scott Hawley
+
+# Remove by IH.
+

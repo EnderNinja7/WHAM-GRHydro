@@ -1,0 +1,563 @@
+# Parameter definitions for thorn GRHydro_Init_Data
+# $Header$
+
+shares:HydroBase
+
+USES CCTK_INT timelevels
+USES KEYWORD Bvec_evolution_method
+USES KEYWORD Y_e_evolution_method
+USES KEYWORD temperature_evolution_method
+USES KEYWORD entropy_evolution_method
+
+EXTENDS KEYWORD initial_hydro ""
+{
+  "shocktube" :: "Shocktube type"
+  "shocktube_hot" :: "Shocktube with hot nuclear EOS"
+  "only_atmo"  :: "Set only a low atmosphere"
+  "read_conformal":: "After reading in initial alp, rho and gxx from h5 files, sets the other quantities"
+  "simple_wave" :: "Set initial data from Anile Miller Motta, Phys.Fluids. 26, 1450 (1983)"
+  "monopole"    :: "Monopole at the center"
+  "cylexp"      :: "Cylindrical Explosion"
+  "rotor"       :: "Magnetic Rotor test from DelZanna,Bucciantini, and Londrillo A&A 400, 397-413 (2003)"
+  "advectedloop":: "Magnetic advected loop test"
+  "alfvenwave"  :: "Circularly polarized Alfven wave"
+  "hydro_bondi_solution" :: "Spherical single black hole Bondi solution"
+  "hydro_bondi_solution_iso" :: "Spherical single black hole Bondi solution - TEST ISO CASE!!!!!!"
+  "magnetized_bondi_solution" :: "Magnetized Spherical single black hole Bondi solution"
+  "magnetized_bondi_solution_iso" :: "Magnetized Spherical single black hole Bondi solution - TEST ISO CASE!!!!!!"
+}
+
+EXTENDS KEYWORD initial_Bvec
+{
+  "shocktube"  :: "Shocktube type"
+  "cylexp"     :: "Poloidal Magnetic Field"
+  "poloidalmagfield" :: "Poloidal Magnetic Field"
+  "magnetized Bondi" :: "radial magnetic field appropriate for Bondi test"
+}
+
+EXTENDS KEYWORD initial_Avec
+{
+  "poloidalmagfield" :: "Poloidal Magnetic Field"
+}
+
+EXTENDS KEYWORD initial_entropy
+{
+  "magnetized Bondi" :: "Initial entropy for a radial magnetic field appropriate for Bondi test"
+}
+
+
+shares:ADMBase
+
+EXTENDS KEYWORD initial_data ""
+{
+#  "shocktube"    :: "Shock tube initial data for GRHydro"
+  "con2primtest"  :: "Testing the con -> prim conversion"
+  "con2prim2con_test"   :: "Testing the con -> prim -> con conversion"
+  "prim2con2prim_test"  :: "Testing the prim -> con -> prim conversion"
+  "prim2con2prim_polytype_test"  :: "Testing the prim -> con -> prim conversion - polytype version"
+  "reconstruction_test" :: "Testing reconstruction"
+}
+
+private:
+
+KEYWORD shocktube_type "Diagonal or parallel shock?"
+{
+  "diagshock"  :: "Diagonal across all axes"
+  "diagshock2d"   :: "Diagonal across x-y axes"
+  "xshock"  :: "Parallel to x axis"
+  "yshock"  :: "Parallel to y axis"
+  "zshock"  :: "Parallel to z axis"
+  "sphere"  :: "spherically symmetric shock"
+} "xshock"
+
+KEYWORD shock_case "Simple, Sod's problem or other?"
+{
+  "Simple"  :: "GRAstro_Hydro test case"
+  "Sod"     :: "Sod's problem"
+  "Blast"   :: "Strong blast wave"
+  "Balsaralike1" :: "Hydro version of Balsara Test #1"
+  "Balsara0"    :: "Balsara Test #1, but unmagnetized"
+  "Balsara1"    :: "Balsara Test #1"
+  "Balsara2"    :: "Balsara Test #2"
+  "Balsara3"    :: "Balsara Test #3"
+  "Balsara4"    :: "Balsara Test #4"
+  "Balsara5"    :: "Balsara Test #5"
+  "Alfven"      :: "Generical Alfven Test"
+  "Komissarov1" :: "Komissarov Test #1"
+  "Komissarov2" :: "Komissarov Test #2"
+  "Komissarov3" :: "Komissarov Test #3"
+  "Komissarov4" :: "Komissarov Test #4"
+  "Komissarov5" :: "Komissarov Test #5"
+  "Komissarov6" :: "Komissarov Test #6"
+  "Komissarov7" :: "Komissarov Test #7"
+  "Komissarov8" :: "Komissarov Test #8"
+  "Komissarov9" :: "Komissarov Test #9"
+} "Sod"
+
+REAL shock_xpos "Position of shock plane: x"
+{
+  *:*  :: "Anything"
+} 0.0
+
+REAL shock_ypos "Position of shock plane: y"
+{
+  *:*  :: "Anything"
+} 0.0
+
+REAL shock_zpos "Position of shock plane: z"
+{
+  *:*  :: "Anything"
+} 0.0
+
+REAL shock_radius "Radius of sperical shock"
+{
+  0.0:*   :: "Anything positive"
+} 1.0
+
+BOOLEAN change_shock_direction "Change the shock direction"
+{ 
+} "no"
+
+REAL simple_wave_constant_c_0 "The c_0 constant in Anile Miller Motta, Phys.Fluids. 26, 1450 (1983)"
+{
+  0:1     :: "It is the sound speed where the fluid velocity is zero"
+} 0.3
+
+REAL simple_wave_v_max "The v_max constant in Anile Miller Motta, Phys.Fluids. 26, 1450 (1983)"
+{
+  0:1     :: "It is the maximum velocity in the initial configuration (see p. 1457, bottom of first column)"
+} 0.7
+
+# For the "atmosphere"
+
+REAL atmosphere_vel[3] "Velocity of the atmosphere if non-trivial"
+{
+  *:*     :: "Anything"
+} 0.0
+
+BOOLEAN attenuate_atmosphere "Attenuate the velocity in the atmosphere"
+{
+} "no"
+
+# Initial magnetic field used by different tests
+
+REAL Bx_init "Initial B-field in the x-dir"
+{
+  *:*     :: "Anything"
+} 0.0
+
+REAL By_init "Initial B-field in the y-dir"
+{
+  *:*     :: "Anything"
+} 0.0
+
+REAL Bz_init "Initial B-field in the z-dir"
+{
+  *:*     :: "Anything"
+} 0.0
+
+# Initial primitive values:
+REAL rho_init "Initial rest mass density"
+{
+ (0:*    :: "Anything positive."
+} 1.0d-6
+
+REAL velx_init "Initial x velocity" 
+{
+ *:*    :: "Anything."
+} 1.0d-1
+
+REAL vely_init "Initial y velocity" 
+{
+ *:*    :: "Anything."
+} 1.0d-1
+
+REAL velz_init "Initial z velocity" 
+{
+ *:*    :: "Anything."
+} 1.0d-1
+
+REAL eps_init "Initial specific internal energy"
+{
+ (0:*    :: "Anything positive."
+} 1.0d-6
+
+REAL press_init "Initial pressure"
+{
+ (0:*    :: "Anything positive."
+} 6.666666666666667d-7
+
+# Initial conservative values used by c2p tests:
+
+CCTK_BOOLEAN use_c2p_with_entropy_eqn "Use the con2prim routine that uses the entropy equation instead of the energy equation"
+{
+} no
+
+REAL dens_init "Initial conserved mass density"
+{
+ (0:*    :: "Anything positive."
+} 1.29047362
+
+REAL sx_init "Initial x component of conserved momentum density"
+{
+ *:*    :: "Anything."
+} 0.166666658
+
+REAL sy_init "Initial y component of conserved momentum density"
+{
+ *:*    :: "Anything."
+} 0.166666658
+
+REAL sz_init "Initial z component of conserved momentum density"
+{
+ *:*    :: "Anything."
+} 0.166666658
+
+REAL tau_init "Initial conserved total energy density"
+{
+ (0:*    :: "Anything positive."
+} 0.484123939
+
+# Initial values for 3-metric components. Default to euclidian 3-metric
+REAL gxx_init "Initial xx metric componenent"
+{
+ *:*    :: "Anything, but be carefull to set a positive definite 3-metric!"
+} 1.0
+
+REAL gxy_init "Initial xy metric componenent"
+{
+ *:*    :: "Anything, but be carefull to set a positive definite 3-metric!"
+} 0.0
+
+REAL gxz_init "Initial xz metric componenent"
+{
+ *:*    :: "Anything, but be carefull to set a positive definite 3-metric!"
+} 0.0
+
+REAL gyy_init "Initial yy metric componenent"
+{
+ *:*    :: "Anything, but be carefull to set a positive definite 3-metric!"
+} 1.0
+
+REAL gyz_init "Initial yz metric componenent"
+{
+ *:*    :: "Anything, but be carefull to set a positive definite 3-metric!"
+} 0.0
+
+REAL gzz_init "Initial zz metric componenent"
+{
+ *:*    :: "Anything, but be carefull to set a positive definite 3-metric!"
+} 1.0
+
+
+KEYWORD monopole_type "Which kind of monopole?"
+{
+  "Point" :: "Single point with Bx /= 0"
+  "Gauss" :: "Gaussian w/radius R_Gauss"
+  "1dalt" :: "1-d alternating"
+  "2dalt" :: "2-d alternating"
+  "3dalt" :: "3-d alternating"
+} "Point"
+
+CCTK_REAL R_Gauss "Radius for a Gaussian monopole"
+{
+  0:* :: "Any positive number"
+} 1.0
+
+CCTK_REAL Monopole_point_Bx "Pointlike Monopole Bx value"
+{
+  *:* :: "Any number"
+} 1.0
+
+# For cylindrical explosion test:
+CCTK_REAL cyl_r_inner "Inner Radius"
+{
+  (0:* :: "Any positive number"
+} 0.8
+
+CCTK_REAL cyl_r_outer "Outer Radius"
+{
+  (0:* :: "Any positive number"
+} 1.0
+
+# the defaults are Komissarov's values
+CCTK_REAL cyl_rho_inner "density in inner core"
+{
+  (0:* :: "any positive number"
+} 1.d-2
+
+CCTK_REAL cyl_press_inner "pressure in inner core"
+{
+  (0:* :: "any positive number"
+} 1.d0
+
+CCTK_REAL cyl_rho_outer "density in outer region"
+{
+  (0:* :: "any positive number"
+} 1.d-4
+
+CCTK_REAL cyl_press_outer "pressure in outer region"
+{
+  (0:* :: "any positive number"
+} 3.d-5
+
+# For magnetic advected loop test:
+
+KEYWORD advectedloop_type "2-dimensional or 3-dimensional?"
+{
+  "2D"  :: "2-dimensional (B^z=0)"
+  "3D"  :: "3-dimensional (B^3=0, where B^3 || oblique cylinder axis."
+} "2D"
+
+KEYWORD advectedloop_case "V^z=0 or not?"
+{
+  "V^z=0"  :: "Useful to evaluate divB deviations"
+  "V^z/=0" :: "Useful to evaluate con2prim robustness in keeping V^z const."
+} "V^z=0"
+
+KEYWORD advectedloop_delA "How to calculate B^i field from the potential A^b"
+{
+  "Exact"   :: "Analytic, exact closed formula applied"
+  "Numeric" :: "Finite difference approximation of the derivatives applied"
+} "Exact"
+
+#################################3
+# Alfven Wave test
+################################3
+KEYWORD alfvenwave_type "1-dimensional or 2-dimensional?"
+{
+  "1D"  :: "1-dimensional"
+  "2D"  :: "2-dimensional (in x-y plane)"
+} "1D"
+
+CCTK_REAL alfvenwave_pressure "P_gas for the Alfven wave"
+{
+  (0:* :: "positive"
+} 1.0
+
+##################################################################################
+# BONDI PARAMETERS: (black hole mass specified by parameters from the "Exact" thorn)
+##################################################################################
+# Default value is that used in the HARM test
+CCTK_REAL mdot_sonicpt_bondi "Accretion rate at sonic point in hydro units"
+{
+  (0:* :: "positive"
+} 12.566370614359172954
+
+CCTK_REAL  r_sonicpt_bondi  "Radial distance of the sonic point from the black hole in units of mass_bh_bondi"
+{
+  (0:* :: "positive"
+} 8.0
+
+keyword bondi_coordinates  "Which coordinate system to use"
+{
+  "Boyer-Lindquist" :: "Schwarzschild or Boyer-Lindquist (Cartesian) Coordinates"
+  "Kerr-Schild"   :: "Kerr-Schild (Cartesian) Coordinates"
+  "Isotropic"     :: "Isotropic (Cartesian) Coordinates"
+} "Isotropic" 
+
+
+CCTK_INT num_bondi_sols  "Number of central masses about which to calculate Bondi solutions"
+{
+  1:100 :: "positive"
+} 1
+
+CCTK_REAL bh_bondi_pos_x [100] "X-coordinate of black hole in Bondi solution"
+{
+  *:* :: "anything"
+} 0.0
+
+CCTK_REAL bh_bondi_pos_y [100] "Y-coordinate of black hole in Bondi solution"
+{
+  *:* :: "anything"
+} 0.0
+
+CCTK_REAL bh_bondi_pos_z [100] "Z-coordinate of black hole in Bondi solution"
+{
+  *:* :: "anything"
+} 0.0
+
+CCTK_REAL bondi_central_mass [100] "Mass of central object to find Bondi solution about  "
+{
+  (0:* :: "positive"
+} 1.0
+
+CCTK_REAL bondi_central_spin [100] "Dimensionless spin of central object within Bondi solution "
+{
+  (-1.:1.) :: "dimensionless spin so any real number between -1 and 1"
+} 0.0
+
+CCTK_REAL bondi_rmin [100] "Smallest radius in units of central mass at which the solution is found"
+{
+  (0:*  :: "dimensionless inner radius for Bondi solution"
+} 1.e-15
+
+CCTK_REAL bondi_rmax [100] "Largest radius in units of central mass at which the solution is found"
+{
+  (0:*  :: "dimensionless outer radius for Bondi solution"
+} 400. 
+
+CCTK_REAL n_bondi_pts [100] "Number of points to use in determining global Bondi solution"
+{
+  (1:*  :: "number of points in global Bondi solution"
+} 2000
+
+CCTK_REAL bondi_bmag "B_0 parameter for magnetized Bondi"
+{
+  0:* :: "Anything positive"
+} 0.01
+
+CCTK_REAL bondi_radial_offset "redefine r_grid=r_KS-r0 to avoid singularity on grid"
+{
+  0:* :: "Any positive number"
+} 0.0
+
+CCTK_BOOLEAN set_bondi_beta_sonicpt "Set plasma beta parameter instead of bondi_bmag"
+{
+} no
+
+CCTK_REAL  bondi_beta_sonicpt "Plasma beta parameter at the sonic point. Calculate bondi_bmag afterwards."
+{
+  (0:* :: "positive"
+} 1.0
+
+CCTK_KEYWORD bondi_Bvec_method "how to compute the magnetic field vector"
+{
+  "direct"    :: "directly from Cartesian metric"
+  "transform" :: "transform Schwarzschild solution to Kerr Schild"
+} "direct"
+
+CCTK_BOOLEAN bondi_evolve_only_annulus "reset to initial data outside of bondi_freeze_inner_radius and bondi_freeze_outer_radius"
+{
+} "no"
+
+CCTK_REAL bondi_freeze_inner_radius "reset to initial at radii below this"
+{
+  *:* :: "any value"
+} -1.
+
+CCTK_REAL bondi_freeze_outer_radius "reset to initial at radii above this"
+{
+  *:* :: "any value"
+} 1e300
+
+CCTK_BOOLEAN bondi_overwrite_boundary "reset data to initial data in outer boundary in boundary condition"
+{
+} "no"
+
+# For Poloidal Magnetic field test:
+
+CCTK_REAL poloidal_A_b  "Vector potential strength"
+{
+  *:* :: "Anything."
+} 0.1
+
+CCTK_INT poloidal_n_p  "Vector potential strength"
+{
+  0:*  :: "Any positive integer."
+} 3
+
+CCTK_REAL poloidal_P_cut  "Pressure used to confine the B field inside a star"
+{
+  (0:*  :: "Anything positive."
+} 1.0e-8
+
+CCTK_INT poloidal_P_p "Index of pressure factor"
+{
+ (0:* :: "Any non-negative integer"
+} 1
+
+CCTK_REAL poloidal_rho_max  "Maximum initial density"
+{
+  (0:*  :: "Anything positive."
+} 1.0e-3
+
+# for the Magnetic Rotor test:
+# default values are from DelZanna,Bucciantini, and Londrillo A&A 400, 397-413 (2003) though notation differs
+
+CCTK_REAL rotor_xc "center of rotation"
+{
+  *:* :: "Any location"
+} 0.5
+
+CCTK_REAL rotor_yc "center of rotation"
+{
+  *:* :: "Any location"
+} 0.5
+
+CCTK_REAL rotor_bvcxl "intial component of Bvec[0]"
+{
+  *:* :: "any real number"
+} 1.0
+
+CCTK_REAL rotor_bvcyl "intial component of Bvec[1]"
+{
+  *:* :: "any real number"
+} 0.0
+
+CCTK_REAL rotor_bvczl "intial component of Bvec[2]"
+{
+  *:* :: "any real number"
+} 0.0
+  
+CCTK_REAL rotor_r_rot "radius of rotor"
+{
+  (0:* :: "any positive number"
+} 0.1
+  
+CCTK_REAL rotor_v_max "Maximum velocity"
+{
+  (-1:1) :: "any subluminal speed (negative is clockwise)"
+} 0.995
+
+
+CCTK_REAL rotor_rhoin "initial density inside rotor"
+{
+  (0:* :: "any positive number"
+} 10.d0
+
+CCTK_REAL rotor_pressin "initial pressure inside rotor"
+{
+  (0:* :: "any positive number"
+} 1.d0
+
+CCTK_REAL rotor_rhoout "initial density outside rotor"
+{
+  (0:* :: "any positive number"
+} 1.d0
+
+CCTK_REAL rotor_pressout "initial pressure outside rotor"
+{
+  (0:* :: "any positive number"
+} 1.d0
+
+CCTK_BOOLEAN rotor_use_smoothing "Smooth the edge?"
+{
+} yes
+
+CCTK_REAL rotor_rsmooth_rel "Define the radius in relative terms if so"
+{
+  (0:* :: "any positive number"
+} 0.05
+
+
+shares:GRHydro
+
+USES real GRHydro_eos_rf_prec
+USES real GRHydro_rho_central
+USES real GRHydro_eps_min
+USES real GRHydro_perc_ptol
+USES real GRHydro_del_ptol
+USES keyword GRHydro_eos_type
+USES string GRHydro_eos_table
+USES real rho_abs_min
+USES real rho_rel_min
+USES REAL initial_rho_abs_min
+USES REAL initial_rho_rel_min
+USES REAL initial_atmosphere_factor
+USES int GRHydro_stencil
+USES BOOLEAN clean_divergence
+
+shares:EOS_Omni
+USES REAL gl_gamma
+USES BOOLEAN nuceos_read_table
